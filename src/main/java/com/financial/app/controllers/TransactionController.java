@@ -27,10 +27,9 @@ public class TransactionController {
     @PostMapping
     public ResponseEntity<TransactionResponse> create(
             @RequestBody @Valid CreateTransactionRequest request,
-            Authentication authentication,
-            @RequestHeader(value = "X-User-Id", required = false) UUID xUserIdHeader
+            Authentication authentication
     ) {
-        UUID userId = resolveUserId(authentication, xUserIdHeader);
+        UUID userId = UUID.fromString(authentication.getName());
         TransactionResponse response = service.create(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -38,24 +37,9 @@ public class TransactionController {
     @GetMapping
     public ResponseEntity<Page<TransactionResponse>> listAll(
             Authentication authentication,
-            @PageableDefault(sort = "date", direction = Sort.Direction.DESC, size = 20) Pageable pageable,
-            @RequestHeader(value = "X-User-Id", required = false) UUID xUserIdHeader
+            @PageableDefault(sort = "date", direction = Sort.Direction.DESC, size = 20) Pageable pageable
     ) {
-        UUID userId = resolveUserId(authentication, xUserIdHeader);
+        UUID userId = UUID.fromString(authentication.getName());
         return ResponseEntity.ok(service.listAll(userId, pageable));
-    }
-
-    private UUID resolveUserId(Authentication authentication, UUID xUserIdHeader) {
-        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
-            try {
-                return UUID.fromString(authentication.getName());
-            } catch (IllegalArgumentException e) {
-                // Ignore if authentication name is not a UUID (fallback to header)
-            }
-        }
-        if (xUserIdHeader != null) {
-            return xUserIdHeader;
-        }
-        throw new IllegalStateException("User ID must be provided via Token or X-User-Id header");
     }
 }
