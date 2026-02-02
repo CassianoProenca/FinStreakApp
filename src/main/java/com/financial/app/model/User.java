@@ -22,4 +22,8 @@ public class User extends AbstractBaseEntity {
 
     @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean onboardingCompleted = false;
 }

@@ -52,6 +52,6 @@ public class AuthController {
         }
 
         String token = tokenService.generateToken(user);
-        return ResponseEntity.ok(new AuthResponse(token, user.getName()));
+        return ResponseEntity.ok(new AuthResponse(token, user.getName(), user.isOnboardingCompleted()));
     }
 }
