@@ -1,0 +1,20 @@
+package com.financial.app.model.enums;
+
+public enum TransactionCategory {
+    // Despesas
+    FOOD,           // Alimentação, iFood, Mercado
+    TRANSPORT,      // Uber, Gasolina, Ônibus
+    HOUSING,        // Aluguel, Condomínio, Luz
+    LEISURE,        // Cinema, Jogos, Passeios
+    EDUCATION,      // Faculdades, Cursos, Livros
+    HEALTH,         // Farmácia, Convênio
+    SHOPPING,       // Roupas, Eletrônicos
+
+    // Receitas
+    SALARY,         // Salário Mensal
+    FREELANCE,      // Jobs extras
+    INVESTMENT,     // Rendimentos, Dividendos
+
+    // Outros
+    OTHER           // O que não se encaixa acima
+}
