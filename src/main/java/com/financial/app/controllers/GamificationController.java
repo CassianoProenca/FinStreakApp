@@ -6,7 +6,11 @@ import com.financial.app.repositories.GamificationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import com.financial.app.dto.request.CheckInRequest;
+import com.financial.app.events.CheckInEvent;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.UUID;
 
@@ -16,6 +20,7 @@ import java.util.UUID;
 public class GamificationController {
 
     private final GamificationRepository repository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @GetMapping("/me")
     public ResponseEntity<GamificationResponse> getMyProfile(Authentication authentication) {
@@ -39,5 +44,18 @@ public class GamificationController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/checkin")
+    public ResponseEntity<Void> doDailyCheckIn(
+            @RequestBody(required = false) CheckInRequest request,
+            JwtAuthenticationToken token
+    ) {
+        UUID userId = UUID.fromString(token.getName());
+        String note = (request != null) ? request.note() : "Dia sem gastos";
+
+        eventPublisher.publishEvent(new CheckInEvent(userId, note));
+
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,16 +1,17 @@
 package com.financial.app.services;
 
+import com.financial.app.events.CheckInEvent;
 import com.financial.app.events.TransactionCreatedEvent;
 import com.financial.app.model.GamificationProfile;
 import com.financial.app.repositories.GamificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -19,39 +20,59 @@ public class StreakHandler {
 
     private final GamificationRepository repository;
 
+    private static final Long XP_TRANSACTION = 10L;
+    private static final Long XP_CHECKIN = 20L;
+    private static final Long XP_STREAK_BONUS = 50L;
 
+    /**
+     * OUVIDO 1: Escuta quando uma transação é criada (Gasto ou Ganho)
+     */
     @EventListener
     @Transactional
     public void handleTransactionCreated(TransactionCreatedEvent event) {
-        log.info("🎮 Evento recebido! Processando gamificação para User: {}", event.userId());
+        log.info("🎮 Evento financeiro recebido! User: {}", event.userId());
+        processActivity(event.userId(), event.date().toLocalDate(), XP_TRANSACTION);
+    }
 
-        // 1. Busca o perfil ou cria um novo (Onboarding silencioso)
-        GamificationProfile profile = repository.findByUserId(event.userId())
-                .orElseGet(() -> createNewProfile(event.userId()));
+    /**
+     * OUVIDO 2: Escuta quando o usuário faz Check-in de Economia (Botão "Não gastei nada")
+     */
+    @EventListener
+    @Transactional
+    public void handleCheckIn(CheckInEvent event) {
+        log.info("🎮 Check-in de Economia recebido! User: {}", event.userId());
+        log.info("📝 Nota do usuário: {}", event.note());
 
-        // 2. Lógica de Data (Ignora hora, só importa o dia)
-        LocalDate transactionDate = event.date().toLocalDate();
+        processActivity(event.userId(), LocalDate.now(), XP_CHECKIN);
+    }
+
+    private void processActivity(UUID userId, LocalDate activityDate, Long xpEarned) {
+        // 1. Busca ou Cria (Onboarding)
+        GamificationProfile profile = repository.findByUserId(userId)
+                .orElseGet(() -> createNewProfile(userId));
+
         LocalDate lastActivity = profile.getLastActivityDate();
 
-        // 3. O algoritmo do Streak
+        // 2. O Algoritmo do Tempo
         if (lastActivity == null) {
-            // Primeira vez usando
-            incrementStreak(profile, transactionDate);
-        } else if (lastActivity.isEqual(transactionDate)) {
-            // Já usou hoje? Só ganha XP, não aumenta streak
-            addXp(profile, 10L); // XP por transação extra
-        } else if (lastActivity.plusDays(1).isEqual(transactionDate)) {
-            // Usou ontem e usou hoje? Aumenta o fogo! 🔥
-            incrementStreak(profile, transactionDate);
+            // Primeira atividade da vida
+            startNewStreak(profile, activityDate, xpEarned);
+        } else if (lastActivity.isEqual(activityDate)) {
+            // Já interagiu hoje? Apenas soma o XP da ação (sem bônus de dia)
+            addXp(profile, xpEarned);
+            log.info("⚠️ Atividade extra no mesmo dia. +{} XP.", xpEarned);
+        } else if (lastActivity.plusDays(1).isEqual(activityDate)) {
+            // Veio ontem e veio hoje? Aumenta o fogo! 🔥
+            incrementStreak(profile, activityDate, xpEarned);
         } else {
-            // Quebrou o streak (tristeza) 😢
-            resetStreak(profile, transactionDate);
+            // Quebrou o streak (passou mais de 1 dia) 😢
+            resetStreak(profile, activityDate, xpEarned);
         }
 
         repository.save(profile);
     }
 
-    private GamificationProfile createNewProfile(java.util.UUID userId) {
+    private GamificationProfile createNewProfile(UUID userId) {
         return GamificationProfile.builder()
                 .userId(userId)
                 .currentStreak(0)
@@ -60,23 +81,31 @@ public class StreakHandler {
                 .build();
     }
 
-    private void incrementStreak(GamificationProfile profile, LocalDate date) {
+    private void startNewStreak(GamificationProfile profile, LocalDate date, Long xp) {
+        profile.setCurrentStreak(1);
+        profile.setMaxStreak(1);
+        profile.setLastActivityDate(date);
+        profile.setTotalXp(profile.getTotalXp() + xp + XP_STREAK_BONUS);
+        log.info("🔥 Primeiro Streak Iniciado!");
+    }
+
+    private void incrementStreak(GamificationProfile profile, LocalDate date, Long xp) {
         profile.setCurrentStreak(profile.getCurrentStreak() + 1);
 
-        // Atualiza o recorde pessoal se necessário
         if (profile.getCurrentStreak() > profile.getMaxStreak()) {
             profile.setMaxStreak(profile.getCurrentStreak());
         }
 
         profile.setLastActivityDate(date);
-        profile.setTotalXp(profile.getTotalXp() + 50L); // Bônus por manter o dia
+
+        profile.setTotalXp(profile.getTotalXp() + xp + XP_STREAK_BONUS);
         log.info("🔥 Streak AUMENTOU! Novo valor: {}", profile.getCurrentStreak());
     }
 
-    private void resetStreak(GamificationProfile profile, LocalDate date) {
-        profile.setCurrentStreak(1); // Recomeça do 1 (o dia de hoje conta)
+    private void resetStreak(GamificationProfile profile, LocalDate date, Long xp) {
+        profile.setCurrentStreak(1); // Recomeça do 1
         profile.setLastActivityDate(date);
-        profile.setTotalXp(profile.getTotalXp() + 10L); // XP de consolação
+        profile.setTotalXp(profile.getTotalXp() + xp); // Ganha só o XP da ação, sem bônus
         log.info("❄️ Streak QUEBROU. Resetando para 1.");
     }
 
