@@ -37,7 +37,7 @@ public class CheckStreakService implements CheckStreakUseCase {
                         .totalXp(0L)
                         .build());
         
-        profile.initialize();
+        // profile.initialize(); - Removed
 
         int oldStreak = profile.getCurrentStreak();
         

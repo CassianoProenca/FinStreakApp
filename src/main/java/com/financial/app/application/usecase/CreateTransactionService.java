@@ -41,7 +41,7 @@ public class CreateTransactionService implements CreateTransactionUseCase {
                 .date(command.date())
                 .build();
 
-        transaction.initialize(); // Set ID, dates
+        // transaction.initialize(); - Removed to let JPA handle it
 
         Transaction savedTransaction = saveTransactionPort.save(transaction);
 

@@ -30,7 +30,7 @@ public class CreateGoalService implements CreateGoalUseCase {
                 .status(GoalStatus.IN_PROGRESS)
                 .build();
         
-        goal.initialize(); // Set ID, createdAt
+        // goal.initialize(); - Removed
 
         return saveGoalPort.save(goal);
     }
