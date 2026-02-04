@@ -1,23 +1,45 @@
 services:
+  app:
+    build: .
+    container_name: finstreak_app
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-app_db}
+      - DB_USER=${DB_USER:-app_user}
+      - DB_PASS=${DB_PASS:-app_pass}
+      - JWT_SECRET=${JWT_SECRET:-u7i8o9p0q1w2e3r4t5y6u7i8o9p0q1w2}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - finstreak-net
+
   postgres:
     image: postgres:15
     container_name: app_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:-app_user}
+      POSTGRES_PASSWORD: ${DB_PASS:-app_pass}
+      POSTGRES_DB: ${DB_NAME:-app_db}
     ports:
-      - "${DB_PORT}:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-app_user} -d ${DB_NAME:-app_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    # Se você for rodar a API em outro container ligado a este compose, o host será "postgres".
-    # Se rodar a API localmente, mantenha DB_HOST=localhost (veja applicationl.yaml abaixo).
+    networks:
+      - finstreak-net
 
 volumes:
   pgdata:
+
+networks:
+  finstreak-net:
+    driver: bridge
