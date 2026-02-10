@@ -2,7 +2,7 @@ name: Deploy FinStreak API
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 env:
   # Nome da imagem (minúsculo obrigatório)
