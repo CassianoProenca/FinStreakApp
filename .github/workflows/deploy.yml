@@ -6,7 +6,7 @@ on:
 
 env:
   # Nome da imagem (minúsculo obrigatório)
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/finstreak-api:latest
+  IMAGE_NAME: ghcr.io/cassianoproenca/finstreak-api:latest
   CONTAINER_NAME: finstreak-backend
 
 jobs:
