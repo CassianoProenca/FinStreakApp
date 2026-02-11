@@ -67,7 +67,7 @@ jobs:
               --name ${{ env.CONTAINER_NAME }} \
               --network vps-network \
               --restart always \
-              -p 8080:8080 \
+              -p 127.0.0.1:8080:8080 \
               -e SERVER_PORT=8080 \
               -e DB_HOST=vps-postgres \
               -e DB_PORT=5432 \
