@@ -75,6 +75,8 @@ jobs:
               -e DB_USER=postgres \
               -e DB_PASS=${{ secrets.DB_PASS }} \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              -e SWAGGER_USER=${{ secrets.SWAGGER_USER }} \
+              -e SWAGGER_PASSWORD=${{ secrets.SWAGGER_PASSWORD }} \
               ${{ env.IMAGE_NAME }}
             
             echo "Limpando a casa..."
