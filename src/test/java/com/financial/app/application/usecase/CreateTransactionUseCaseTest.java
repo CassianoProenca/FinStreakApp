@@ -62,7 +62,11 @@ class CreateTransactionUseCaseTest {
                 "Grocery",
                 TransactionType.EXPENSE,
                 TransactionCategory.FOOD,
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                false,
+                null,
+                null,
+                "food"
         );
 
         when(loadUserPort.loadById(userId)).thenReturn(Optional.of(user));
@@ -85,7 +89,11 @@ class CreateTransactionUseCaseTest {
                 "Test",
                 TransactionType.EXPENSE,
                 TransactionCategory.OTHER,
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                false,
+                null,
+                null,
+                "other"
         );
 
         when(loadUserPort.loadById(userId)).thenReturn(Optional.empty());

@@ -19,7 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -51,11 +51,11 @@ class CompleteOnboardingUseCaseTest {
                 .onboardingCompleted(false)
                 .build();
 
-        OnboardingRequest.ExpenseRequest expense1 = new OnboardingRequest.ExpenseRequest("Rent", new BigDecimal("1500"), "HOUSING");
-        OnboardingRequest.ExpenseRequest expense2 = new OnboardingRequest.ExpenseRequest("Internet", new BigDecimal("100"), "UTILITIES");
-        OnboardingRequest.ExpenseRequest expense3 = new OnboardingRequest.ExpenseRequest("Netflix", new BigDecimal("50"), "LEISURE");
+        OnboardingRequest.ExpenseRequest expense1 = new OnboardingRequest.ExpenseRequest("Rent", new BigDecimal("1500"), "HOUSING", "house");
+        OnboardingRequest.ExpenseRequest expense2 = new OnboardingRequest.ExpenseRequest("Internet", new BigDecimal("100"), "UTILITIES", "wifi");
+        OnboardingRequest.ExpenseRequest expense3 = new OnboardingRequest.ExpenseRequest("Netflix", new BigDecimal("50"), "LEISURE", "play");
 
-        OnboardingRequest.GoalRequest goalRequest = new OnboardingRequest.GoalRequest("Buy Car", new BigDecimal("50000"), LocalDate.now().plusYears(1));
+        OnboardingRequest.GoalRequest goalRequest = new OnboardingRequest.GoalRequest("Buy Car", new BigDecimal("50000"), LocalDateTime.now().plusYears(1), "car");
 
         command = new OnboardingCommand(
                 user.getId(),
