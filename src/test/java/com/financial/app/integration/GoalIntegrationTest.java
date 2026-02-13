@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -25,8 +25,8 @@ class GoalIntegrationTest extends BaseIntegrationTest {
                 "Travel to Japan",
                 new BigDecimal("15000.00"),
                 BigDecimal.ZERO,
-                LocalDate.now().plusMonths(12),
-                "✈️"
+                LocalDateTime.now().plusMonths(12),
+                "airplane"
         );
 
         // 1. Create Goal
@@ -55,8 +55,8 @@ class GoalIntegrationTest extends BaseIntegrationTest {
                 "Impossible Goal",
                 new BigDecimal("100.00"),
                 BigDecimal.ZERO,
-                LocalDate.now().minusDays(1), // Past date
-                "❌"
+                LocalDateTime.now().minusDays(1), // Past date
+                "error"
         );
 
         mockMvc.perform(post("/api/goals")

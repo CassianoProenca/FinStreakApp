@@ -87,7 +87,11 @@ class FullFlowIntegrationTest {
                 "First Quest Reward",
                 TransactionType.INCOME,
                 TransactionCategory.SALARY, // Using Salary as "Quest Reward" generic
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                false,
+                null,
+                null,
+                "reward"
         );
 
         mockMvc.perform(post("/api/transactions")
@@ -102,7 +106,20 @@ class FullFlowIntegrationTest {
 
     @Test
     @Order(4)
-    @DisplayName("4. Should Retrieve Gamification Profile and verify Streak")
+    @DisplayName("4. Should Retrieve Transactions with pagination")
+    void shouldListTransactions() throws Exception {
+        mockMvc.perform(get("/api/transactions")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].amount").value(50.00))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("5. Should Retrieve Gamification Profile and verify Streak")
     void shouldGetGamificationProfile() throws Exception {
         mockMvc.perform(get("/api/gamification/me")
                         .header("Authorization", "Bearer " + jwtToken))
