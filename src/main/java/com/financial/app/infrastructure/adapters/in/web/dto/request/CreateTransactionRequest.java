@@ -20,9 +20,26 @@ public record CreateTransactionRequest(
         @NotNull(message = "O tipo da transação é obrigatório")
         TransactionType type,
 
-        @NotNull(message = "A categoria é obrigatória")
-        TransactionCategory category,
+                @NotNull(message = "A categoria é obrigatória")
 
-        // Opcional: Se o user não mandar data, o sistema assume "agora" no Mapper
-        LocalDateTime date
-) {}
+                TransactionCategory category,
+
+        
+
+                // Opcional: Se o user não mandar data, o sistema assume "agora" no Mapper
+
+                LocalDateTime date,
+
+        
+
+                boolean isRecurring,
+
+                String frequency,
+
+                Integer repeatDay,
+
+                String iconKey
+
+        ) {}
+
+        

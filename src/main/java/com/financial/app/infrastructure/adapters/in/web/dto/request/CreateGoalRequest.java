@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record CreateGoalRequest(
         @NotBlank(message = "O título é obrigatório")
@@ -19,7 +19,7 @@ public record CreateGoalRequest(
 
         @NotNull(message = "A data limite é obrigatória")
         @Future(message = "A data limite deve ser no futuro")
-        LocalDate deadline,
+        LocalDateTime deadline,
 
-        String icon
+        String iconKey
 ) {}

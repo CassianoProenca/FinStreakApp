@@ -8,6 +8,12 @@ import com.financial.app.infrastructure.adapters.in.web.dto.request.LoginRequest
 import com.financial.app.infrastructure.adapters.in.web.dto.request.RegisterRequest;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.AuthResponse;
 import com.financial.app.infrastructure.security.TokenService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,18 +25,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "Autenticação", description = "Endpoints para registro e login de usuários")
 public class AuthController {
 
     private final RegisterUserUseCase registerUserUseCase;
-    private final LoadUserPort loadUserPort; // In pure hex, use LoginUseCase
+    private final LoadUserPort loadUserPort;
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
 
+    @Operation(
+            summary = "Registrar novo usuário",
+            description = "Cria uma conta no sistema e gera automaticamente um avatar padrão.",
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
+                    @ApiResponse(responseCode = "409", description = "E-mail já cadastrado")
+            }
+    )
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequest request) {
+    public ResponseEntity<Void> register(
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Dados para criação de conta",
+                    content = @Content(examples = @ExampleObject(value = "{\"name\": \"Lucas Silva\", \"email\": \"lucas@example.com\", \"password\": \"senha123\"}"))
+            )
+            @Valid RegisterRequest request) {
         try {
             RegisterUserCommand command = new RegisterUserCommand(
                     request.name(),
@@ -44,31 +66,37 @@ public class AuthController {
         }
     }
 
+    @Operation(
+            summary = "Realizar Login",
+            description = "Autentica o usuário e retorna o token JWT junto com os dados de perfil.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Login realizado com sucesso",
+                            content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
+            }
+    )
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Credenciais de acesso",
+                    content = @Content(examples = @ExampleObject(value = "{\"email\": \"lucas@example.com\", \"password\": \"senha123\"}"))
+            )
+            @Valid LoginRequest request) {
         User user = loadUserPort.loadByEmail(request.email())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
-        // TokenService might need refactoring to accept Domain User instead of Entity if it used Entity before
-        // Assuming TokenService can handle it or we adapt here. 
-        // If TokenService expects Entity, we have a problem. 
-        // Let's assume TokenService takes an object with email/id. 
-        // For now, I'll assume TokenService needs refactoring or works.
-        // I will check TokenService content later, but for now passing 'user' which is domain model.
-        // The original TokenService likely expected com.financial.app.model.User.
-        // We have com.financial.app.domain.model.User now. They are different classes.
-        // I need to update TokenService or map it.
-        
-        // TEMPORARY FIX: I will cast or adapt if needed, but since I can't see TokenService I'll assume I need to fix it.
-        // I'll leave it like this and fix TokenService in next step if user complains or I check it.
-        
-        // Actually, let's just make sure TokenService is compatible.
-        
-        String token = tokenService.generateToken(user); 
-        return ResponseEntity.ok(new AuthResponse(token, user.getName(), user.isOnboardingCompleted()));
+        String token = tokenService.generateToken(user);
+        return ResponseEntity.ok(new AuthResponse(
+                token,
+                user.getName(),
+                user.getAvatarUrl(),
+                user.isOnboardingCompleted(),
+                user.getMonthlyIncome()
+        ));
     }
 }

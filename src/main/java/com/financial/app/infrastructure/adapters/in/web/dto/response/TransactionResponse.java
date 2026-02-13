@@ -1,4 +1,3 @@
-// FILE: src/main/java/com/financial/app/dto/response/TransactionResponse.java
 package com.financial.app.infrastructure.adapters.in.web.dto.response;
 
 import com.financial.app.domain.model.enums.TransactionCategory;
@@ -14,5 +13,9 @@ public record TransactionResponse(
         TransactionType type,
         TransactionCategory category,
         LocalDateTime date,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        boolean isRecurring,
+        String frequency,
+        Integer repeatDay,
+        String iconKey
 ) {}

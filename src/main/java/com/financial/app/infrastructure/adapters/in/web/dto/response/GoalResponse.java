@@ -2,7 +2,7 @@ package com.financial.app.infrastructure.adapters.in.web.dto.response;
 
 import com.financial.app.domain.model.enums.GoalStatus;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record GoalResponse(
@@ -11,7 +11,7 @@ public record GoalResponse(
         BigDecimal targetAmount,
         BigDecimal currentAmount,
         Double progressPercentage,
-        LocalDate deadline,
+        LocalDateTime deadline,
         GoalStatus status,
-        String icon
+        String iconKey
 ) {}

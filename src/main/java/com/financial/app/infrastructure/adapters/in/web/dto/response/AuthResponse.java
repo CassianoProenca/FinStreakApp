@@ -1,7 +1,11 @@
 package com.financial.app.infrastructure.adapters.in.web.dto.response;
 
+import java.math.BigDecimal;
+
 public record AuthResponse(
         String token,
         String name,
-        boolean onboardingCompleted
+        String avatarUrl,
+        boolean onboardingCompleted,
+        BigDecimal monthlyIncome
 ) {}
