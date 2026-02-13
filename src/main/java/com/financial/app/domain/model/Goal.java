@@ -6,7 +6,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -20,9 +20,9 @@ public class Goal extends BaseDomainEntity {
     private String title;
     private BigDecimal targetAmount;
     private BigDecimal currentAmount;
-    private LocalDate deadline;
+    private LocalDateTime deadline;
     private GoalStatus status;
-    private String icon;
+    private String iconKey;
 
     public double calculateProgress() {
         if (targetAmount == null || targetAmount.compareTo(BigDecimal.ZERO) == 0) {

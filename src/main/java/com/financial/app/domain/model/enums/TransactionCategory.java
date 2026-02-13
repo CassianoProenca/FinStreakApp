@@ -5,6 +5,7 @@ public enum TransactionCategory {
     FOOD,           // Alimentação, iFood, Mercado
     TRANSPORT,      // Uber, Gasolina, Ônibus
     HOUSING,        // Aluguel, Condomínio, Luz
+    UTILITIES,      // Internet, Celular, TV
     LEISURE,        // Cinema, Jogos, Passeios
     EDUCATION,      // Faculdades, Cursos, Livros
     HEALTH,         // Farmácia, Convênio

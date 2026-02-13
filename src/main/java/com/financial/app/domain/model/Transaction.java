@@ -22,4 +22,11 @@ public class Transaction extends BaseDomainEntity {
     private TransactionType type;
     private TransactionCategory category;
     private LocalDateTime date;
+
+    @Builder.Default
+    private boolean isRecurring = false;
+    private String frequency; // e.g., MONTHLY, WEEKLY
+    private Integer repeatDay;
+    private String iconKey;
+    private UUID parentTransactionId;
 }
