@@ -18,7 +18,7 @@ public class GoalMapper {
                 .currentAmount(entity.getCurrentAmount())
                 .deadline(entity.getDeadline())
                 .status(entity.getStatus())
-                .icon(entity.getIcon())
+                .iconKey(entity.getIconKey())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .version(entity.getVersion())
@@ -37,7 +37,7 @@ public class GoalMapper {
                 .currentAmount(domain.getCurrentAmount())
                 .deadline(domain.getDeadline())
                 .status(domain.getStatus())
-                .icon(domain.getIcon())
+                .iconKey(domain.getIconKey())
                 .build();
 
         entity.setId(domain.getId());

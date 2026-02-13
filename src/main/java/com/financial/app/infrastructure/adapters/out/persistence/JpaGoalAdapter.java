@@ -1,5 +1,6 @@
 package com.financial.app.infrastructure.adapters.out.persistence;
 
+import com.financial.app.application.ports.out.DeleteGoalPort;
 import com.financial.app.application.ports.out.LoadGoalsPort;
 import com.financial.app.application.ports.out.SaveGoalPort;
 import com.financial.app.domain.model.Goal;
@@ -14,12 +15,17 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
-public class JpaGoalAdapter implements SaveGoalPort, LoadGoalsPort {
+public class JpaGoalAdapter implements SaveGoalPort, LoadGoalsPort, DeleteGoalPort {
 
     private final GoalJpaRepository repository;
 
     public JpaGoalAdapter(GoalJpaRepository repository) {
         this.repository = repository;
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        repository.deleteById(id);
     }
 
     @Override
@@ -37,7 +43,7 @@ public class JpaGoalAdapter implements SaveGoalPort, LoadGoalsPort {
                 existingEntity.setCurrentAmount(goal.getCurrentAmount());
                 existingEntity.setDeadline(goal.getDeadline());
                 existingEntity.setStatus(goal.getStatus());
-                existingEntity.setIcon(goal.getIcon());
+                existingEntity.setIconKey(goal.getIconKey());
 
                 GoalEntity savedEntity = repository.save(existingEntity);
                 return GoalMapper.toDomain(savedEntity);

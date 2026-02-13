@@ -25,7 +25,9 @@ public class UserMapper {
                 .name(entity.getName())
                 .email(entity.getEmail())
                 .password(entity.getPassword())
+                .avatarUrl(entity.getAvatarUrl())
                 .onboardingCompleted(entity.isOnboardingCompleted())
+                .monthlyIncome(entity.getMonthlyIncome())
                 .preferences(prefs != null ? prefs : new UserPreferences())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
@@ -51,7 +53,9 @@ public class UserMapper {
                 .name(domain.getName())
                 .email(domain.getEmail())
                 .password(domain.getPassword())
+                .avatarUrl(domain.getAvatarUrl())
                 .onboardingCompleted(domain.isOnboardingCompleted())
+                .monthlyIncome(domain.getMonthlyIncome())
                 .preferences(prefsEntity)
                 .build();
 

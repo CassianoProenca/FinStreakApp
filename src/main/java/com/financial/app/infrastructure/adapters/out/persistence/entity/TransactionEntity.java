@@ -39,4 +39,19 @@ public class TransactionEntity extends AbstractBaseEntity {
 
     @Column(nullable = false)
     private LocalDateTime date;
+
+    @Column(name = "is_recurring", nullable = false)
+    private boolean isRecurring;
+
+    @Column(name = "frequency")
+    private String frequency;
+
+    @Column(name = "repeat_day")
+    private Integer repeatDay;
+
+    @Column(name = "icon_key")
+    private String iconKey;
+
+    @Column(name = "parent_transaction_id")
+    private UUID parentTransactionId;
 }

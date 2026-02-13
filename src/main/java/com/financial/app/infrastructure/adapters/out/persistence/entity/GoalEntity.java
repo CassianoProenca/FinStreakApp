@@ -30,11 +30,12 @@ public class GoalEntity extends AbstractBaseEntity {
     private BigDecimal currentAmount;
 
     @Column(nullable = false)
-    private LocalDate deadline;
+    private java.time.LocalDateTime deadline;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private GoalStatus status;
 
-    private String icon;
+    @Column(name = "icon_key")
+    private String iconKey;
 }

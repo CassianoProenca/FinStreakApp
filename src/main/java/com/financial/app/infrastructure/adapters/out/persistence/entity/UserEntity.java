@@ -21,8 +21,14 @@ public class UserEntity extends AbstractBaseEntity {
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @Column(nullable = false)
     private boolean onboardingCompleted;
+
+    @Column(name = "monthly_income", precision = 19, scale = 2)
+    private java.math.BigDecimal monthlyIncome;
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "preferences_id", referencedColumnName = "id")

@@ -18,6 +18,11 @@ public class TransactionMapper {
                 .type(entity.getType())
                 .category(entity.getCategory())
                 .date(entity.getDate())
+                .isRecurring(entity.isRecurring())
+                .frequency(entity.getFrequency())
+                .repeatDay(entity.getRepeatDay())
+                .iconKey(entity.getIconKey())
+                .parentTransactionId(entity.getParentTransactionId())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .version(entity.getVersion())
@@ -36,6 +41,11 @@ public class TransactionMapper {
                 .type(domain.getType())
                 .category(domain.getCategory())
                 .date(domain.getDate())
+                .isRecurring(domain.isRecurring())
+                .frequency(domain.getFrequency())
+                .repeatDay(domain.getRepeatDay())
+                .iconKey(domain.getIconKey())
+                .parentTransactionId(domain.getParentTransactionId())
                 .build();
 
         entity.setId(domain.getId());
