@@ -1,8 +1,7 @@
 package com.financial.app.application.ports.in.command;
 
-import com.financial.app.domain.model.enums.GoalStatus;
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record CreateGoalCommand(
@@ -10,6 +9,6 @@ public record CreateGoalCommand(
     String title,
     BigDecimal targetAmount,
     BigDecimal currentAmount,
-    LocalDate deadline,
-    String icon
+    LocalDateTime deadline,
+    String iconKey
 ) {}

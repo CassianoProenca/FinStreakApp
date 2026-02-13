@@ -13,6 +13,10 @@ public record CreateTransactionCommand(
     String description,
     TransactionType type,
     TransactionCategory category,
-    LocalDateTime date
+    LocalDateTime date,
+    boolean isRecurring,
+    String frequency,
+    Integer repeatDay,
+    String iconKey
 ) {}
 
