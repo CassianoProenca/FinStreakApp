@@ -27,7 +27,6 @@ public class CreateTransactionService implements CreateTransactionUseCase {
 
     @Override
     public Transaction execute(CreateTransactionCommand command) {
-        // Validate user exists
         if (loadUserPort.loadById(command.userId()).isEmpty()) {
             throw new RuntimeException("User not found");
         }
@@ -39,13 +38,14 @@ public class CreateTransactionService implements CreateTransactionUseCase {
                 .type(command.type())
                 .category(command.category())
                 .date(command.date())
+                .isRecurring(command.isRecurring())
+                .frequency(command.frequency())
+                .repeatDay(command.repeatDay())
+                .iconKey(command.iconKey())
                 .build();
-
-        // transaction.initialize(); - Removed to let JPA handle it
 
         Transaction savedTransaction = saveTransactionPort.save(transaction);
 
-        // Update streak asynchronously or synchronously depending on requirements
         checkStreakUseCase.execute(command.userId());
 
         return savedTransaction;

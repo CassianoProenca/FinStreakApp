@@ -46,7 +46,12 @@ public class CompleteOnboardingService implements CompleteOnboardingUseCase {
             throw new IllegalStateException("Onboarding already completed");
         }
 
-        // 1. Create Income Transaction (Salary)
+        // 1. Set Monthly Income on User (Point 2)
+        if (command.monthlyIncome() != null) {
+            user.setMonthlyIncome(command.monthlyIncome());
+        }
+
+        // 2. Create Income Transaction (Salary) - Still useful to have a history record
         if (command.monthlyIncome() != null && command.monthlyIncome().compareTo(BigDecimal.ZERO) > 0) {
             Transaction income = Transaction.builder()
                     .userId(user.getId())
@@ -55,11 +60,12 @@ public class CompleteOnboardingService implements CompleteOnboardingUseCase {
                     .type(TransactionType.INCOME)
                     .category(TransactionCategory.SALARY)
                     .date(LocalDateTime.now())
+                    .iconKey("salary") // Default icon for salary
                     .build();
             saveTransactionPort.save(income);
         }
 
-        // 2. Create Fixed Expenses
+        // 3. Create Fixed Expenses (Point 3 - Recurrence)
         if (command.fixedExpenses() != null) {
             command.fixedExpenses().forEach(expense -> {
                 Transaction tx = Transaction.builder()
@@ -67,14 +73,17 @@ public class CompleteOnboardingService implements CompleteOnboardingUseCase {
                         .amount(expense.amount())
                         .description(expense.name())
                         .type(TransactionType.EXPENSE)
-                        .category(TransactionCategory.OTHER) // Simplified for MVP
+                        .category(expense.category() != null ? TransactionCategory.valueOf(expense.category().toUpperCase()) : TransactionCategory.OTHER)
                         .date(LocalDateTime.now())
+                        .isRecurring(true)
+                        .frequency("MONTHLY")
+                        .iconKey(expense.iconKey())
                         .build();
                 saveTransactionPort.save(tx);
             });
         }
 
-        // 3. Create Main Goal
+        // 4. Create Main Goal (Point 5 & 6)
         if (command.mainGoal() != null) {
             Goal goal = Goal.builder()
                     .userId(user.getId())
@@ -83,11 +92,12 @@ public class CompleteOnboardingService implements CompleteOnboardingUseCase {
                     .currentAmount(BigDecimal.ZERO)
                     .deadline(command.mainGoal().deadline())
                     .status(GoalStatus.IN_PROGRESS)
+                    .iconKey(command.mainGoal().iconKey())
                     .build();
             saveGoalPort.save(goal);
         }
 
-        // 4. Complete User Onboarding
+        // 5. Complete User Onboarding (Point 1)
         user.completeOnboarding();
         saveUserPort.save(user);
     }

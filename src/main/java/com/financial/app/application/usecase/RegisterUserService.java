@@ -30,8 +30,9 @@ public class RegisterUserService implements RegisterUserUseCase {
         User newUser = User.builder()
                 .name(command.name())
                 .email(command.email())
-                .password(command.password()) // In real app, encode password here or in domain service
+                .password(command.password())
                 .onboardingCompleted(false)
+                .avatarUrl("https://ui-avatars.com/api/?name=" + command.name().replace(" ", "+") + "&background=random")
                 .preferences(new UserPreferences())
                 .build();
         

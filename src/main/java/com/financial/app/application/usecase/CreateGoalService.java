@@ -26,7 +26,7 @@ public class CreateGoalService implements CreateGoalUseCase {
                 .targetAmount(command.targetAmount())
                 .currentAmount(command.currentAmount() != null ? command.currentAmount() : java.math.BigDecimal.ZERO)
                 .deadline(command.deadline())
-                .icon(command.icon())
+                .iconKey(command.iconKey())
                 .status(GoalStatus.IN_PROGRESS)
                 .build();
         
