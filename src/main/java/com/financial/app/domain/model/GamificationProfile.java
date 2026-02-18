@@ -41,12 +41,12 @@ public class GamificationProfile extends BaseDomainEntity {
         }
     }
 
-    public void checkStreak(LocalDate activityDate) {
+    public boolean checkStreak(LocalDate activityDate) {
         if (lastActivityDate == null) {
             currentStreak = 1;
         } else if (activityDate.equals(lastActivityDate)) {
-            // Already active today, do nothing
-            return;
+            // Already active today — no new activity
+            return false;
         } else if (activityDate.equals(lastActivityDate.plusDays(1))) {
             // Consecutive day
             currentStreak++;
@@ -59,5 +59,6 @@ public class GamificationProfile extends BaseDomainEntity {
             maxStreak = currentStreak;
         }
         lastActivityDate = activityDate;
+        return true;
     }
 }

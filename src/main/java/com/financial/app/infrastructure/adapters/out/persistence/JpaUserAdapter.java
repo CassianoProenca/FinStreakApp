@@ -1,5 +1,6 @@
 package com.financial.app.infrastructure.adapters.out.persistence;
 
+import com.financial.app.application.ports.out.LoadAllUsersPort;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveUserPort;
 import com.financial.app.domain.model.User;
@@ -9,11 +10,12 @@ import com.financial.app.infrastructure.adapters.out.persistence.mapper.UserMapp
 import com.financial.app.infrastructure.adapters.out.persistence.repository.UserJpaRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Component
-public class JpaUserAdapter implements LoadUserPort, SaveUserPort {
+public class JpaUserAdapter implements LoadUserPort, SaveUserPort, LoadAllUsersPort {
 
     private final UserJpaRepository userJpaRepository;
 
@@ -77,5 +79,12 @@ public class JpaUserAdapter implements LoadUserPort, SaveUserPort {
         
         UserEntity savedEntity = userJpaRepository.save(entity);
         return UserMapper.toDomain(savedEntity);
+    }
+
+    @Override
+    public List<UUID> loadAllUserIds() {
+        return userJpaRepository.findAll().stream()
+                .map(UserEntity::getId)
+                .toList();
     }
 }

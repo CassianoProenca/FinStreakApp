@@ -6,8 +6,10 @@ import com.financial.app.application.ports.in.command.CreateTransactionCommand;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.domain.model.Transaction;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional
@@ -28,7 +30,7 @@ public class CreateTransactionService implements CreateTransactionUseCase {
     @Override
     public Transaction execute(CreateTransactionCommand command) {
         if (loadUserPort.loadById(command.userId()).isEmpty()) {
-            throw new RuntimeException("User not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado");
         }
 
         Transaction transaction = Transaction.builder()

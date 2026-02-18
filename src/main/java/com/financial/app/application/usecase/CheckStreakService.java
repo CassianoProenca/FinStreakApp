@@ -9,6 +9,7 @@ import com.financial.app.application.ports.out.SaveGamificationProfilePort;
 import com.financial.app.domain.model.Achievement;
 import com.financial.app.domain.model.GamificationProfile;
 import com.financial.app.domain.model.enums.AchievementType;
+import com.financial.app.domain.model.enums.NotificationType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,22 +47,24 @@ public class CheckStreakService implements CheckStreakUseCase {
         int oldStreak = profile.getCurrentStreak();
         int oldLevel = profile.getLevel();
 
-        // 1. Update Streak
-        profile.checkStreak(LocalDate.now());
+        // 1. Update Streak — returns true only if this is a new day (first activity today)
+        boolean isNewActivity = profile.checkStreak(LocalDate.now());
 
-        // 2. Add XP for activity (e.g., 50 XP per transaction/check-in)
-        profile.addXp(50);
+        // 2. Add XP for activity only once per day
+        if (isNewActivity) {
+            profile.addXp(50);
+        }
 
         // 3. Check for Achievements
         checkAndAwardAchievements(profile);
 
         // 4. Notifications
         if (profile.getCurrentStreak() > oldStreak) {
-            notificationPort.notifyUser(userId, "🔥 Streak increased to " + profile.getCurrentStreak() + "!");
+            notificationPort.notifyUser(userId, "🔥 Streak aumentou para " + profile.getCurrentStreak() + " dias!", NotificationType.STREAK);
         }
-        
+
         if (profile.getLevel() > oldLevel) {
-            notificationPort.notifyUser(userId, "🆙 Level Up! You are now Level " + profile.getLevel() + "!");
+            notificationPort.notifyUser(userId, "🆙 Subiu de Nível! Você está no Nível " + profile.getLevel() + "!", NotificationType.LEVEL_UP);
         }
 
         saveProfilePort.save(profile);
@@ -107,6 +110,6 @@ public class CheckStreakService implements CheckStreakUseCase {
                 .earnedAt(LocalDateTime.now())
                 .build();
         saveAchievementPort.save(achievement);
-        notificationPort.notifyUser(userId, "🏆 New Badge Earned: " + name + "!");
+        notificationPort.notifyUser(userId, "🏆 Nova Medalha: " + name + "!", NotificationType.ACHIEVEMENT);
     }
 }

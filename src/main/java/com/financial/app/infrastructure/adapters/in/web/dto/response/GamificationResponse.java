@@ -12,5 +12,6 @@ public record GamificationResponse(
         Long totalXp,
         Integer level,
         Long xpForNextLevel,
+        Long xpWithinCurrentLevel,
         LocalDate lastActivityDate
 ) {}

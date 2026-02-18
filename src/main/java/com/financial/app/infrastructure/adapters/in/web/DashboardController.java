@@ -1,6 +1,8 @@
 package com.financial.app.infrastructure.adapters.in.web;
 
+import com.financial.app.application.ports.in.GetAllTimeBalanceUseCase;
 import com.financial.app.application.ports.in.GetDashboardSummaryUseCase;
+import com.financial.app.infrastructure.adapters.in.web.dto.response.BalanceResponse;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.DashboardSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,6 +25,7 @@ import java.util.UUID;
 public class DashboardController {
 
     private final GetDashboardSummaryUseCase getDashboardSummaryUseCase;
+    private final GetAllTimeBalanceUseCase getAllTimeBalanceUseCase;
 
     @Operation(
         summary = "Resumo Mensal (Home)",
@@ -39,11 +42,21 @@ public class DashboardController {
             Authentication authentication
     ) {
         UUID userId = UUID.fromString(authentication.getName());
-        
+
         int queryMonth = (month != null) ? month : LocalDate.now().getMonthValue();
         int queryYear = (year != null) ? year : LocalDate.now().getYear();
 
         DashboardSummaryResponse summary = getDashboardSummaryUseCase.execute(userId, queryMonth, queryYear);
         return ResponseEntity.ok(summary);
+    }
+
+    @Operation(
+        summary = "Saldo Acumulado (All-time)",
+        description = "Retorna o saldo total desde o início, sem filtro de data."
+    )
+    @GetMapping("/balance")
+    public ResponseEntity<BalanceResponse> getAllTimeBalance(Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(getAllTimeBalanceUseCase.execute(userId));
     }
 }

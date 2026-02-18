@@ -125,8 +125,37 @@ class FullFlowIntegrationTest {
                         .header("Authorization", "Bearer " + jwtToken))
                 .andDo(print())
                 .andExpect(status().isOk())
-                // Assuming CheckStreakUseCase logic initializes profile if missing and adds 1 streak for today's activity
                 .andExpect(jsonPath("$.currentStreak").value(1))
-                .andExpect(jsonPath("$.maxStreak").value(1));
+                .andExpect(jsonPath("$.maxStreak").value(1))
+                .andExpect(jsonPath("$.xpWithinCurrentLevel").exists())
+                .andExpect(jsonPath("$.totalXp").exists());
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("6. Should retrieve achievements and find FIRST_STEPS earned")
+    void shouldGetAchievements() throws Exception {
+        mockMvc.perform(get("/api/gamification/achievements/me")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThan(0)))
+                .andExpect(jsonPath("$[?(@.type == 'FIRST_STEPS')]").exists())
+                .andExpect(jsonPath("$[0].id").exists())
+                .andExpect(jsonPath("$[0].earnedAt").exists());
+    }
+
+    @Test
+    @Order(7)
+    @DisplayName("7. Should retrieve all-time balance with correct totals")
+    void shouldGetAllTimeBalance() throws Exception {
+        mockMvc.perform(get("/api/dashboard/balance")
+                        .header("Authorization", "Bearer " + jwtToken))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalIncome").value(50.00))
+                .andExpect(jsonPath("$.totalExpenses").value(0.00))
+                .andExpect(jsonPath("$.balance").value(50.00));
     }
 }
