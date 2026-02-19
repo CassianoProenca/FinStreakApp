@@ -8,6 +8,7 @@ import com.financial.app.application.ports.out.LoadGoalsPort;
 import com.financial.app.application.ports.out.NotificationPort;
 import com.financial.app.application.ports.out.SaveAchievementPort;
 import com.financial.app.application.ports.out.SaveGoalPort;
+import com.financial.app.domain.exception.ResourceNotFoundException;
 import com.financial.app.domain.model.Achievement;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.GoalDeposit;
@@ -41,7 +42,7 @@ public class DepositInGoalService implements DepositInGoalUseCase {
         Goal goal = loadGoalsPort.loadByUserId(userId).stream()
                 .filter(g -> g.getId().equals(goalId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Goal not found or access denied"));
+                .orElseThrow(() -> new ResourceNotFoundException("Meta não encontrada"));
 
         // 2. Atualizar o valor atual da meta
         BigDecimal newAmount = goal.getCurrentAmount().add(amount);

@@ -6,6 +6,8 @@ import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveGoalPort;
 import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.application.ports.out.SaveUserPort;
+import com.financial.app.domain.exception.BusinessException;
+import com.financial.app.domain.exception.ResourceNotFoundException;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.User;
@@ -40,10 +42,10 @@ public class CompleteOnboardingService implements CompleteOnboardingUseCase {
     @Override
     public void execute(OnboardingCommand command) {
         User user = loadUserPort.loadById(command.userId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
         if (user.isOnboardingCompleted()) {
-            throw new IllegalStateException("Onboarding already completed");
+            throw new BusinessException("Onboarding já realizado");
         }
 
         // 1. Set Monthly Income on User (Point 2)

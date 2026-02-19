@@ -3,6 +3,7 @@ package com.financial.app.application.usecase;
 import com.financial.app.application.ports.in.DeleteGoalUseCase;
 import com.financial.app.application.ports.out.DeleteGoalPort;
 import com.financial.app.application.ports.out.LoadGoalsPort;
+import com.financial.app.domain.exception.ResourceNotFoundException;
 import com.financial.app.domain.model.Goal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,7 @@ public class DeleteGoalService implements DeleteGoalUseCase {
         Goal goal = loadGoalsPort.loadByUserId(userId).stream()
                 .filter(g -> g.getId().equals(goalId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Goal not found or access denied"));
+                .orElseThrow(() -> new ResourceNotFoundException("Meta não encontrada"));
 
         deleteGoalPort.deleteById(goalId);
     }

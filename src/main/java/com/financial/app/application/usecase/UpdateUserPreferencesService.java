@@ -4,6 +4,7 @@ import com.financial.app.application.ports.in.UpdateUserPreferencesUseCase;
 import com.financial.app.application.ports.in.command.UpdateUserPreferencesCommand;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveUserPort;
+import com.financial.app.domain.exception.ResourceNotFoundException;
 import com.financial.app.domain.model.User;
 import com.financial.app.domain.model.UserPreferences;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class UpdateUserPreferencesService implements UpdateUserPreferencesUseCas
     @Override
     public void execute(UpdateUserPreferencesCommand command) {
         User user = loadUserPort.loadById(command.userId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
         UserPreferences newPrefs = UserPreferences.builder()
                 .theme(command.theme())

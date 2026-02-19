@@ -4,6 +4,7 @@ import com.financial.app.application.ports.in.UpdateGoalUseCase;
 import com.financial.app.application.ports.in.command.CreateGoalCommand;
 import com.financial.app.application.ports.out.LoadGoalsPort;
 import com.financial.app.application.ports.out.SaveGoalPort;
+import com.financial.app.domain.exception.ResourceNotFoundException;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.enums.GoalStatus;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class UpdateGoalService implements UpdateGoalUseCase {
         Goal goal = loadGoalsPort.loadByUserId(userId).stream()
                 .filter(g -> g.getId().equals(goalId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Goal not found or access denied"));
+                .orElseThrow(() -> new ResourceNotFoundException("Meta não encontrada"));
 
         goal.setTitle(command.title());
         goal.setTargetAmount(command.targetAmount());

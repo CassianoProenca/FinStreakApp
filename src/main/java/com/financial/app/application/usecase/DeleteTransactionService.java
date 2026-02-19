@@ -3,12 +3,12 @@ package com.financial.app.application.usecase;
 import com.financial.app.application.ports.in.DeleteTransactionUseCase;
 import com.financial.app.application.ports.out.DeleteTransactionPort;
 import com.financial.app.application.ports.out.LoadTransactionPort;
+import com.financial.app.domain.exception.ResourceNotFoundException;
+import com.financial.app.domain.exception.UnauthorizedAccessException;
 import com.financial.app.domain.model.Transaction;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
@@ -23,10 +23,10 @@ public class DeleteTransactionService implements DeleteTransactionUseCase {
     @Override
     public void execute(UUID userId, UUID transactionId) {
         Transaction transaction = loadTransactionPort.loadById(transactionId)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada"));
 
         if (!transaction.getUserId().equals(userId)) {
-            throw new RuntimeException("Access denied: You do not own this transaction");
+            throw new UnauthorizedAccessException("Você não tem permissão para excluir esta transação");
         }
 
         deleteTransactionPort.deleteById(transactionId);

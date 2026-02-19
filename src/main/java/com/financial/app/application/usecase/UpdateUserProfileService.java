@@ -4,6 +4,7 @@ import com.financial.app.application.ports.in.UpdateUserProfileUseCase;
 import com.financial.app.application.ports.in.command.UpdateUserProfileCommand;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveUserPort;
+import com.financial.app.domain.exception.ResourceNotFoundException;
 import com.financial.app.domain.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,7 +23,7 @@ public class UpdateUserProfileService implements UpdateUserProfileUseCase {
     @Override
     public User execute(UpdateUserProfileCommand command) {
         User user = loadUserPort.loadById(command.userId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
         if (command.name() != null && !command.name().isBlank()) {
             user.setName(command.name());

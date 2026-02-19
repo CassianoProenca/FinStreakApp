@@ -4,6 +4,7 @@ import com.financial.app.application.ports.in.RegisterUserUseCase;
 import com.financial.app.application.ports.in.command.RegisterUserCommand;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveUserPort;
+import com.financial.app.domain.exception.BusinessException;
 import com.financial.app.domain.model.User;
 import com.financial.app.domain.model.UserPreferences;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ public class RegisterUserService implements RegisterUserUseCase {
     @Override
     public User execute(RegisterUserCommand command) {
         if (loadUserPort.loadByEmail(command.email()).isPresent()) {
-            throw new RuntimeException("Email already in use");
+            throw new BusinessException("E-mail já cadastrado");
         }
 
         User newUser = User.builder()

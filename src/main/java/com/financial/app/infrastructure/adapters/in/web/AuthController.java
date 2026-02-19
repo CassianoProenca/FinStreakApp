@@ -64,17 +64,13 @@ public class AuthController {
                     content = @Content(examples = @ExampleObject(value = "{\"name\": \"Lucas Silva\", \"email\": \"lucas@example.com\", \"password\": \"senha123\"}"))
             )
             @Valid RegisterRequest request) {
-        try {
-            RegisterUserCommand command = new RegisterUserCommand(
-                    request.name(),
-                    request.email(),
-                    passwordEncoder.encode(request.password())
-            );
-            registerUserUseCase.execute(command);
-            return ResponseEntity.status(HttpStatus.CREATED).build();
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
-        }
+        RegisterUserCommand command = new RegisterUserCommand(
+                request.name(),
+                request.email(),
+                passwordEncoder.encode(request.password())
+        );
+        registerUserUseCase.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(
