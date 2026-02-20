@@ -1,6 +1,6 @@
 # 🛠️ Correções de Integridade Financeira (FIX)
 
-Este documento detalha falhas na lógica de saldo e movimentação de metas que precisam de correção para garantir a precisão dos dados do usuário.
+Este documento detalha falhas na lógica de saldo e movimentação de metas que precisam de correção para garantir a precisão dos dados do usuário e desenvolvedores.
 
 ---
 
