@@ -7,11 +7,11 @@ Este documento lista as funcionalidades ausentes, melhorias de UX e correções 
 ## 🛑 Prioridade Alta: Gaps de Funcionalidade (Melhoria Imediata)
 
 ### 1. Gestão Dinâmica de Categorias
-*   **Problema:** Atualmente as categorias são enviadas como `String` livre. Isso causa inconsistência nos dados (ex: "Saúde" vs "Saude").
-*   **Solução:** 
+*   **Problema:** Atualmente as categorias são um enum fixo no backend. O frontend não tem como listá-las dinamicamente, o que torna difícil exibir opções ao usuário sem hardcode no app.
+*   **Solução:**
     *   Implementar `CategoryController` com `GET /api/categories`.
-    *   Validar no backend se a categoria enviada no `CreateTransactionRequest` existe.
-    *   Permitir que o usuário defina cores e ícones para cada categoria.
+    *   Retornar as categorias disponíveis com nome, cor e ícone sugerido.
+    *   Permitir que o usuário defina cores e ícones customizados por categoria.
 
 ### 2. Extrato Mensal Inteligente (Data-Only)
 *   **Conceito:** Como o foco é App Mobile, não geraremos arquivos (PDF/CSV) no servidor. O Backend deve fornecer os dados puros e o Frontend faz a formatação visual ("Juicy UI").
@@ -22,7 +22,7 @@ Este documento lista as funcionalidades ausentes, melhorias de UX e correções 
 
 ### 3. Gestão de Parcelamentos e Recorrência (Upcoming)
 *   **Problema:** O usuário precisa ver o impacto de compras parceladas (ex: celular em 12x) antes delas serem efetivadas no saldo atual.
-*   **Solução:** 
+*   **Solução:**
     *   **Projeção:** Endpoint `GET /api/transactions/upcoming` para listar o que está por vir nos próximos meses.
     *   **Parcelamento Automático:** Permitir criar uma transação com `installments: 12`. O sistema deve projetar essas 12 ocorrências.
     *   **Cancelamento:** Possibilidade de remover uma recorrência futura caso o usuário devolva o produto ou pare de pagar um serviço, garantindo que o "Saldo Projetado" seja corrigido.
@@ -33,7 +33,7 @@ Este documento lista as funcionalidades ausentes, melhorias de UX e correções 
 
 ### 4. Histórico de Evolução Patrimonial
 *   **Problema:** O dashboard atual mostra apenas o "mês atual". Não há dados para plotar gráficos de linha de evolução de longo prazo.
-*   **Solução:** 
+*   **Solução:**
     *   Endpoint `GET /api/dashboard/history?months=6` que retorne o saldo disponível e patrimônio total de cada um dos últimos meses.
 
 ---
@@ -42,18 +42,18 @@ Este documento lista as funcionalidades ausentes, melhorias de UX e correções 
 
 ### 5. Sistema de "Proteção de Streak" (Streak Freeze)
 *   **Problema:** Se o usuário esquecer um dia, o streak volta a zero, o que causa desmotivação.
-*   **Solução:** 
+*   **Solução:**
     *   Implementar o "Streak Freeze" (item que protege a ofensiva por 24h sem atividade). Pode ser conquistado via XP ou por marcos de economia.
 
 ### 6. "Juicy UI" e Feedback Sensorial (Dopamina)
 *   **Conceito:** Sugestões de UX (nível BigTech) para aumentar o engajamento através de micro-interações e estímulos sensoriais.
 *   **Divisão de Responsabilidades:**
-    *   **Frontend (Execução Sensorial):** 
+    *   **Frontend (Execução Sensorial):**
         *   Reproduzir arquivos de som (`.mp3`/`.wav`) de fanfarra ou moedas.
         *   Acionar a vibração do celular (*Haptic Feedback*) via APIs nativas.
         *   Renderizar animações de confete (Canvas/Lottie) no momento da conquista.
         *   Gerenciar o player de música de fundo relaxante.
-    *   **Backend (Gatilhamento e Inteligência):** 
+    *   **Backend (Gatilhamento e Inteligência):**
         *   Enviar **Metadados** nas respostas da API (ex: campo `"goalReached": true` ou `"levelUp": true`).
         *   Calcular e retornar o XP exato ganho em cada ação para animações de `+XP`.
         *   Enviar Notificações em tempo real via WebSockets/Push para eventos de background que geram dopamina (ex: "Seu Streak de 7 dias foi atingido!").
@@ -64,3 +64,5 @@ Este documento lista as funcionalidades ausentes, melhorias de UX e correções 
 *   Integridade de Saldo (Disponível vs Patrimônio).
 *   Funcionalidade de Resgate de Metas (Withdrawal).
 *   Vínculo Automático Transação ↔ Meta via `GOAL_ALLOCATION`.
+*   Documentação Swagger completa: `@Schema` em todos os DTOs de request/response, `@Parameter` em todos os path variables e query params, `@ApiResponse` com códigos 400/401/403/404 em todos os endpoints, exemplos de request body em todos os controllers.
+*   Concorrência no CI/CD: adicionado `concurrency: cancel-in-progress` no workflow de deploy para evitar conflitos de deploy paralelo.
