@@ -9,6 +9,10 @@ env:
   IMAGE_NAME: ghcr.io/cassianoproenca/finstreak-api:latest
   CONTAINER_NAME: finstreak-backend
 
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
