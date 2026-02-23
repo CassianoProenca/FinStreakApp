@@ -9,12 +9,16 @@ import com.financial.app.application.ports.out.NotificationPort;
 import com.financial.app.application.ports.out.SaveAchievementPort;
 import com.financial.app.application.ports.out.SaveGoalPort;
 import com.financial.app.domain.exception.ResourceNotFoundException;
+import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.domain.model.Achievement;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.GoalDeposit;
+import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.AchievementType;
 import com.financial.app.domain.model.enums.GoalStatus;
 import com.financial.app.domain.model.enums.NotificationType;
+import com.financial.app.domain.model.enums.TransactionCategory;
+import com.financial.app.domain.model.enums.TransactionType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +39,7 @@ public class DepositInGoalService implements DepositInGoalUseCase {
     private final LoadAchievementsPort loadAchievementsPort;
     private final SaveAchievementPort saveAchievementPort;
     private final NotificationPort notificationPort;
+    private final SaveTransactionPort saveTransactionPort;
 
     @Override
     public GoalDeposit execute(UUID userId, UUID goalId, BigDecimal amount, String description) {
@@ -55,7 +60,7 @@ public class DepositInGoalService implements DepositInGoalUseCase {
 
         saveGoalPort.save(goal);
 
-        // 4. Registrar no histórico
+        // 4. Registrar no histórico da meta
         GoalDeposit deposit = GoalDeposit.builder()
                 .goalId(goalId)
                 .amount(amount)
@@ -65,10 +70,21 @@ public class DepositInGoalService implements DepositInGoalUseCase {
 
         GoalDeposit savedDeposit = goalHistoryPort.save(deposit);
 
-        // 5. Ganhar Streak/XP por poupar
+        // 5. Criar transação de alocação (GOAL_ALLOCATION) para reduzir saldo disponível
+        Transaction transaction = Transaction.builder()
+                .userId(userId)
+                .amount(amount)
+                .description("Aporte na meta: " + goal.getTitle() + (description != null ? " - " + description : ""))
+                .type(TransactionType.GOAL_ALLOCATION)
+                .category(TransactionCategory.OTHER)
+                .date(LocalDateTime.now())
+                .build();
+        saveTransactionPort.save(transaction);
+
+        // 6. Ganhar Streak/XP por poupar
         checkStreakUseCase.execute(userId);
 
-        // 6. Verificar achievements de meta concluída
+        // 7. Verificar achievements de meta concluída
         if (goal.getStatus() == GoalStatus.COMPLETED) {
             checkAndAwardGoalAchievements(userId, goal.getTargetAmount());
         }

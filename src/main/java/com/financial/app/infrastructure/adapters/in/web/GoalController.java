@@ -5,6 +5,7 @@ import com.financial.app.application.ports.in.DeleteGoalUseCase;
 import com.financial.app.application.ports.in.DepositInGoalUseCase;
 import com.financial.app.application.ports.in.ListGoalsUseCase;
 import com.financial.app.application.ports.in.UpdateGoalUseCase;
+import com.financial.app.application.ports.in.WithdrawFromGoalUseCase;
 import com.financial.app.application.ports.in.command.CreateGoalCommand;
 import com.financial.app.application.ports.out.GoalHistoryPort;
 import com.financial.app.domain.model.Goal;
@@ -39,6 +40,7 @@ public class GoalController {
     private final UpdateGoalUseCase updateGoalUseCase;
     private final DeleteGoalUseCase deleteGoalUseCase;
     private final DepositInGoalUseCase depositInGoalUseCase;
+    private final WithdrawFromGoalUseCase withdrawFromGoalUseCase;
     private final GoalHistoryPort goalHistoryPort;
 
     @Operation(
@@ -133,6 +135,25 @@ public class GoalController {
     ) {
         UUID userId = UUID.fromString(authentication.getName());
         GoalDeposit deposit = depositInGoalUseCase.execute(userId, id, request.amount(), request.description());
+        return ResponseEntity.ok(deposit);
+    }
+
+    @Operation(
+            summary = "Resgatar de uma meta",
+            description = "Retira um valor do saldo atual de uma meta e devolve ao saldo disponível.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Resgate realizado com sucesso"),
+                    @ApiResponse(responseCode = "400", description = "Saldo insuficiente")
+            }
+    )
+    @PostMapping("/{id}/withdraw")
+    public ResponseEntity<GoalDeposit> withdraw(
+            @PathVariable UUID id,
+            @RequestBody @Valid GoalDepositRequest request,
+            Authentication authentication
+    ) {
+        UUID userId = UUID.fromString(authentication.getName());
+        GoalDeposit deposit = withdrawFromGoalUseCase.execute(userId, id, request.amount(), request.description());
         return ResponseEntity.ok(deposit);
     }
 

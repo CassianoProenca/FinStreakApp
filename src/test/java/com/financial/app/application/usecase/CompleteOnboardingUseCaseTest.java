@@ -5,6 +5,7 @@ import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveGoalPort;
 import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.application.ports.out.SaveUserPort;
+import com.financial.app.domain.exception.BusinessException;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.User;
@@ -92,7 +93,7 @@ class CompleteOnboardingUseCaseTest {
         user.setOnboardingCompleted(true);
         when(loadUserPort.loadById(user.getId())).thenReturn(Optional.of(user));
 
-        assertThrows(IllegalStateException.class, () -> completeOnboardingService.execute(command));
+        assertThrows(BusinessException.class, () -> completeOnboardingService.execute(command));
 
         verify(saveTransactionPort, never()).save(any());
         verify(saveGoalPort, never()).save(any());

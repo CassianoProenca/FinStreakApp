@@ -8,7 +8,8 @@ import java.util.Map;
 public record DashboardSummaryResponse(
     BigDecimal totalIncome,
     BigDecimal totalExpenses,
-    BigDecimal balance,
+    BigDecimal availableBalance,
+    BigDecimal totalEquity,
     Map<String, BigDecimal> spendingByCategory,
     List<BudgetSummary> budgets,
     List<Achievement> achievements,

@@ -156,6 +156,7 @@ class FullFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalIncome").value(50.00))
                 .andExpect(jsonPath("$.totalExpenses").value(0.00))
-                .andExpect(jsonPath("$.balance").value(50.00));
+                .andExpect(jsonPath("$.availableBalance").value(50.00))
+                .andExpect(jsonPath("$.totalEquity").value(50.00));
     }
 }

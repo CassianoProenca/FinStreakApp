@@ -5,5 +5,6 @@ import java.math.BigDecimal;
 public record BalanceResponse(
         BigDecimal totalIncome,
         BigDecimal totalExpenses,
-        BigDecimal balance
+        BigDecimal availableBalance,
+        BigDecimal totalEquity
 ) {}

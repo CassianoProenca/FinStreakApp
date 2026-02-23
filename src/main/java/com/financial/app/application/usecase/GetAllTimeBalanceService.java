@@ -2,7 +2,9 @@ package com.financial.app.application.usecase;
 
 import com.financial.app.application.ports.in.GetAllTimeBalanceUseCase;
 import com.financial.app.application.ports.in.TransactionQuery;
+import com.financial.app.application.ports.out.LoadGoalsPort;
 import com.financial.app.application.ports.out.LoadTransactionPort;
+import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.TransactionType;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.BalanceResponse;
@@ -20,6 +22,7 @@ import java.util.UUID;
 public class GetAllTimeBalanceService implements GetAllTimeBalanceUseCase {
 
     private final LoadTransactionPort loadTransactionPort;
+    private final LoadGoalsPort loadGoalsPort;
 
     @Override
     public BalanceResponse execute(UUID userId) {
@@ -37,6 +40,23 @@ public class GetAllTimeBalanceService implements GetAllTimeBalanceUseCase {
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new BalanceResponse(totalIncome, totalExpenses, totalIncome.subtract(totalExpenses));
+        BigDecimal totalAllocations = transactions.stream()
+                .filter(t -> t.getType() == TransactionType.GOAL_ALLOCATION)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalWithdrawals = transactions.stream()
+                .filter(t -> t.getType() == TransactionType.GOAL_WITHDRAWAL)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal availableBalance = totalIncome.add(totalWithdrawals).subtract(totalExpenses).subtract(totalAllocations);
+
+        // Sum of all goals
+        BigDecimal totalInGoals = loadGoalsPort.loadByUserId(userId).stream()
+                .map(Goal::getCurrentAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new BalanceResponse(totalIncome, totalExpenses, availableBalance, availableBalance.add(totalInGoals));
     }
 }

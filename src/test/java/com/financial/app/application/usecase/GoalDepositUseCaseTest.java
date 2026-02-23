@@ -7,10 +7,13 @@ import com.financial.app.application.ports.out.LoadGoalsPort;
 import com.financial.app.application.ports.out.NotificationPort;
 import com.financial.app.application.ports.out.SaveAchievementPort;
 import com.financial.app.application.ports.out.SaveGoalPort;
+import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.GoalDeposit;
+import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.AchievementType;
 import com.financial.app.domain.model.enums.GoalStatus;
+import com.financial.app.domain.model.enums.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,6 +41,7 @@ class GoalDepositUseCaseTest {
     @Mock private LoadAchievementsPort loadAchievementsPort;
     @Mock private SaveAchievementPort saveAchievementPort;
     @Mock private NotificationPort notificationPort;
+    @Mock private SaveTransactionPort saveTransactionPort;
 
     @InjectMocks
     private DepositInGoalService service;
@@ -58,6 +62,7 @@ class GoalDepositUseCaseTest {
         Goal goal = Goal.builder()
                 .id(goalId)
                 .userId(userId)
+                .title("Viagem")
                 .currentAmount(new BigDecimal("1000"))
                 .targetAmount(new BigDecimal("5000"))
                 .status(GoalStatus.IN_PROGRESS)
@@ -71,6 +76,7 @@ class GoalDepositUseCaseTest {
         assertEquals(GoalStatus.IN_PROGRESS, goal.getStatus()); // not yet completed
         verify(saveGoalPort).save(goal);
         verify(goalHistoryPort).save(any(GoalDeposit.class));
+        verify(saveTransactionPort).save(argThat(t -> t.getType() == TransactionType.GOAL_ALLOCATION && t.getAmount().equals(new BigDecimal("500"))));
         verify(checkStreakUseCase).execute(userId);
         verify(saveAchievementPort, never()).save(any()); // no achievement yet
     }

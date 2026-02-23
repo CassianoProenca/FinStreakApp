@@ -136,3 +136,34 @@ Para garantir que o sistema funcione perfeitamente:
 2. Registre uma **Transação (4)** para iniciar seu Streak.
 3. Faça um **Depósito (7)** para ver sua meta sair do 0%.
 4. Cheque o **Dashboard (8)** para ver o impacto visual do seu progresso.
+
+---
+
+## 🔄 Atualizações Recentes de Integridade Financeira (FIX)
+
+Para garantir que o saldo do usuário seja preciso e separar o "dinheiro livre" do "dinheiro poupado", as seguintes alterações foram implementadas:
+
+### 1. Mudanças no Dashboard e Balanço
+Os campos de saldo foram renomeados e novos conceitos foram introduzidos:
+*   **`availableBalance` (Saldo Disponível):** Substituiu o antigo campo `balance`. Ele representa o dinheiro real que você tem para gastar (Receitas - Despesas - Dinheiro alocado em Metas).
+*   **`totalEquity` (Patrimônio Total):** Um novo campo que mostra o valor total da sua conta (Saldo Disponível + Soma de todas as Metas).
+*   **Endpoints afetados:** `GET /api/dashboard/summary` e `GET /api/dashboard/balance`.
+
+### 2. Novo Endpoint: Resgate de Metas (Withdrawal)
+Agora é possível retirar dinheiro de uma meta e devolvê-lo ao saldo disponível.
+- **Endpoint:** `POST /api/goals/{id}/withdraw`
+- **JSON Exemplo:**
+    ```json
+    {
+      "amount": 150.00,
+      "description": "Resgate para emergência"
+    }
+    ```
+- **Comportamento:** O valor é subtraído da meta e somado ao seu `availableBalance`.
+
+### 3. Novos Tipos de Transação
+O extrato agora registra automaticamente movimentações de metas para melhor rastreabilidade:
+*   **`GOAL_ALLOCATION`:** Registrado automaticamente quando você faz um **Depósito** em uma meta.
+*   **`GOAL_WITHDRAWAL`:** Registrado automaticamente quando você faz um **Resgate** de uma meta.
+
+Essas mudanças garantem que o usuário tenha uma visão clara de onde seu dinheiro está alocado e evitam gastos acidentais de valores já poupados.

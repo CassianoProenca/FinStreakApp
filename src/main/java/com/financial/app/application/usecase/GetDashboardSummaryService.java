@@ -5,10 +5,12 @@ import com.financial.app.application.ports.in.TransactionQuery;
 import com.financial.app.application.ports.out.BudgetPort;
 import com.financial.app.application.ports.out.LoadAchievementsPort;
 import com.financial.app.application.ports.out.LoadGamificationProfilePort;
+import com.financial.app.application.ports.out.LoadGoalsPort;
 import com.financial.app.application.ports.out.LoadTransactionPort;
 import com.financial.app.domain.model.Achievement;
 import com.financial.app.domain.model.Budget;
 import com.financial.app.domain.model.GamificationProfile;
+import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.TransactionType;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.BudgetSummary;
@@ -34,15 +36,18 @@ public class GetDashboardSummaryService implements GetDashboardSummaryUseCase {
     private final LoadGamificationProfilePort loadGamificationProfilePort;
     private final BudgetPort budgetPort;
     private final LoadAchievementsPort loadAchievementsPort;
+    private final LoadGoalsPort loadGoalsPort;
 
     public GetDashboardSummaryService(LoadTransactionPort loadTransactionPort,
                                       LoadGamificationProfilePort loadGamificationProfilePort,
                                       BudgetPort budgetPort,
-                                      LoadAchievementsPort loadAchievementsPort) {
+                                      LoadAchievementsPort loadAchievementsPort,
+                                      LoadGoalsPort loadGoalsPort) {
         this.loadTransactionPort = loadTransactionPort;
         this.loadGamificationProfilePort = loadGamificationProfilePort;
         this.budgetPort = budgetPort;
         this.loadAchievementsPort = loadAchievementsPort;
+        this.loadGoalsPort = loadGoalsPort;
     }
 
     @Override
@@ -64,7 +69,22 @@ public class GetDashboardSummaryService implements GetDashboardSummaryUseCase {
                 .map(Transaction::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal balance = totalIncome.subtract(totalExpenses);
+        BigDecimal totalAllocations = transactions.stream()
+                .filter(t -> t.getType() == TransactionType.GOAL_ALLOCATION)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalWithdrawals = transactions.stream()
+                .filter(t -> t.getType() == TransactionType.GOAL_WITHDRAWAL)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal availableBalance = totalIncome.add(totalWithdrawals).subtract(totalExpenses).subtract(totalAllocations);
+
+        // Sum of all goals (total, not filtered by month/year)
+        BigDecimal totalInGoals = loadGoalsPort.loadByUserId(userId).stream()
+                .map(Goal::getCurrentAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Map<String, BigDecimal> spendingByCategory = transactions.stream()
                 .filter(t -> t.getType() == TransactionType.EXPENSE)
@@ -93,6 +113,6 @@ public class GetDashboardSummaryService implements GetDashboardSummaryUseCase {
                 .map(GamificationProfile::getCurrentStreak)
                 .orElse(0);
 
-        return new DashboardSummaryResponse(totalIncome, totalExpenses, balance, spendingByCategory, budgets, achievements, currentStreak);
+        return new DashboardSummaryResponse(totalIncome, totalExpenses, availableBalance, availableBalance.add(totalInGoals), spendingByCategory, budgets, achievements, currentStreak);
     }
 }

@@ -3,6 +3,7 @@ package com.financial.app.application.usecase;
 import com.financial.app.application.ports.out.BudgetPort;
 import com.financial.app.application.ports.out.LoadAchievementsPort;
 import com.financial.app.application.ports.out.LoadGamificationProfilePort;
+import com.financial.app.application.ports.out.LoadGoalsPort;
 import com.financial.app.application.ports.out.LoadTransactionPort;
 import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.TransactionCategory;
@@ -32,6 +33,7 @@ class DashboardSummaryServiceTest {
     @Mock private LoadGamificationProfilePort loadGamificationProfilePort;
     @Mock private BudgetPort budgetPort;
     @Mock private LoadAchievementsPort loadAchievementsPort;
+    @Mock private LoadGoalsPort loadGoalsPort;
 
     @InjectMocks
     private GetDashboardSummaryService service;
@@ -51,12 +53,14 @@ class DashboardSummaryServiceTest {
         when(loadGamificationProfilePort.loadByUserId(userId)).thenReturn(Optional.empty());
         when(budgetPort.findByUserAndPeriod(any(), anyInt(), anyInt())).thenReturn(List.of());
         when(loadAchievementsPort.loadByUserId(userId)).thenReturn(List.of());
+        when(loadGoalsPort.loadByUserId(userId)).thenReturn(List.of());
 
         DashboardSummaryResponse summary = service.execute(userId, 2, 2026);
 
         assertEquals(new BigDecimal("5000"), summary.totalIncome());
         assertEquals(new BigDecimal("2000"), summary.totalExpenses());
-        assertEquals(new BigDecimal("3000"), summary.balance());
+        assertEquals(new BigDecimal("3000"), summary.availableBalance());
+        assertEquals(new BigDecimal("3000"), summary.totalEquity());
         assertEquals(2, summary.spendingByCategory().size());
     }
 }
