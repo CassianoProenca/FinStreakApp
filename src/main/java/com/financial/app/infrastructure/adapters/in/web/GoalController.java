@@ -14,6 +14,7 @@ import com.financial.app.infrastructure.adapters.in.web.dto.request.CreateGoalRe
 import com.financial.app.infrastructure.adapters.in.web.dto.request.GoalDepositRequest;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.GoalResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -47,11 +48,17 @@ public class GoalController {
             summary = "Remover meta",
             description = "Exclui permanentemente uma meta. Apenas o dono pode remover.",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Meta removida com sucesso")
+                    @ApiResponse(responseCode = "204", description = "Meta removida com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "403", description = "A meta não pertence ao usuário autenticado"),
+                    @ApiResponse(responseCode = "404", description = "Meta não encontrada")
             }
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id, Authentication authentication) {
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "ID único da meta", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+            @PathVariable UUID id,
+            Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         deleteGoalUseCase.execute(userId, id);
         return ResponseEntity.noContent().build();
@@ -61,7 +68,9 @@ public class GoalController {
             summary = "Criar nova meta",
             description = "Define um objetivo financeiro com valor alvo e data limite.",
             responses = {
-                    @ApiResponse(responseCode = "201", description = "Meta criada com sucesso")
+                    @ApiResponse(responseCode = "201", description = "Meta criada com sucesso"),
+                    @ApiResponse(responseCode = "400", description = "Dados inválidos (campo obrigatório ausente, valor negativo ou data no passado)"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
             }
     )
     @PostMapping
@@ -92,13 +101,22 @@ public class GoalController {
             summary = "Atualizar meta",
             description = "Permite alterar o título, valor alvo, prazo e ícone de uma meta existente.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Meta atualizada com sucesso")
+                    @ApiResponse(responseCode = "200", description = "Meta atualizada com sucesso"),
+                    @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "403", description = "A meta não pertence ao usuário autenticado"),
+                    @ApiResponse(responseCode = "404", description = "Meta não encontrada")
             }
     )
     @PutMapping("/{id}")
     public ResponseEntity<GoalResponse> update(
+            @Parameter(description = "ID único da meta", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
             @PathVariable UUID id,
-            @RequestBody @Valid CreateGoalRequest request,
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(examples = @ExampleObject(value = "{\"title\": \"Viagem Europa\", \"targetAmount\": 20000, \"deadline\": \"2027-06-01T00:00:00\", \"iconKey\": \"airplane\"}"))
+            )
+            @Valid CreateGoalRequest request,
             Authentication authentication
     ) {
         UUID userId = UUID.fromString(authentication.getName());
@@ -118,13 +136,17 @@ public class GoalController {
 
     @Operation(
             summary = "Depositar em uma meta",
-            description = "Adiciona um valor ao saldo atual de uma meta específica e registra no histórico.",
+            description = "Adiciona um valor ao saldo atual de uma meta e registra no histórico. O valor é descontado do saldo disponível do usuário automaticamente via transação GOAL_ALLOCATION.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Depósito realizado com sucesso")
+                    @ApiResponse(responseCode = "200", description = "Depósito realizado com sucesso"),
+                    @ApiResponse(responseCode = "400", description = "Valor inválido ou negativo"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "404", description = "Meta não encontrada")
             }
     )
     @PostMapping("/{id}/deposit")
     public ResponseEntity<GoalDeposit> deposit(
+            @Parameter(description = "ID único da meta", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
             @PathVariable UUID id,
             @RequestBody
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -140,16 +162,23 @@ public class GoalController {
 
     @Operation(
             summary = "Resgatar de uma meta",
-            description = "Retira um valor do saldo atual de uma meta e devolve ao saldo disponível.",
+            description = "Retira um valor do saldo atual de uma meta e devolve ao saldo disponível do usuário via transação GOAL_WITHDRAWAL.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Resgate realizado com sucesso"),
-                    @ApiResponse(responseCode = "400", description = "Saldo insuficiente")
+                    @ApiResponse(responseCode = "400", description = "Saldo insuficiente na meta para o valor solicitado"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "404", description = "Meta não encontrada")
             }
     )
     @PostMapping("/{id}/withdraw")
     public ResponseEntity<GoalDeposit> withdraw(
+            @Parameter(description = "ID único da meta", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
             @PathVariable UUID id,
-            @RequestBody @Valid GoalDepositRequest request,
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(examples = @ExampleObject(value = "{\"amount\": 200, \"description\": \"Emergência médica\"}"))
+            )
+            @Valid GoalDepositRequest request,
             Authentication authentication
     ) {
         UUID userId = UUID.fromString(authentication.getName());
@@ -157,13 +186,30 @@ public class GoalController {
         return ResponseEntity.ok(deposit);
     }
 
-    @Operation(summary = "Ver histórico da meta", description = "Lista todos os depósitos realizados em uma meta específica.")
+    @Operation(
+            summary = "Ver histórico da meta",
+            description = "Lista todos os depósitos e resgates realizados em uma meta específica, ordenados do mais recente ao mais antigo.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Histórico retornado com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "404", description = "Meta não encontrada")
+            }
+    )
     @GetMapping("/{id}/history")
-    public ResponseEntity<List<GoalDeposit>> getHistory(@PathVariable UUID id) {
+    public ResponseEntity<List<GoalDeposit>> getHistory(
+            @Parameter(description = "ID único da meta", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+            @PathVariable UUID id) {
         return ResponseEntity.ok(goalHistoryPort.findByGoalId(id));
     }
 
-    @Operation(summary = "Listar minhas metas", description = "Retorna todas as metas do usuário logado.")
+    @Operation(
+            summary = "Listar minhas metas",
+            description = "Retorna todas as metas do usuário logado com o progresso atualizado.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de metas retornada com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
     @GetMapping
     public ResponseEntity<List<GoalResponse>> list(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());

@@ -53,6 +53,7 @@ public class AuthController {
             description = "Cria uma conta no sistema e gera automaticamente um avatar padrão.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
+                    @ApiResponse(responseCode = "400", description = "Dados inválidos (campo obrigatório ausente ou e-mail mal formatado)"),
                     @ApiResponse(responseCode = "409", description = "E-mail já cadastrado")
             }
     )
@@ -75,11 +76,12 @@ public class AuthController {
 
     @Operation(
             summary = "Realizar Login",
-            description = "Autentica o usuário e retorna o token JWT junto com os dados de perfil.",
+            description = "Autentica o usuário e retorna o token JWT junto com os dados de perfil. Use o token no header `Authorization: Bearer <token>` em todas as requisições autenticadas.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Login realizado com sucesso",
                             content = @Content(schema = @Schema(implementation = AuthResponse.class))),
-                    @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
+                    @ApiResponse(responseCode = "400", description = "Dados inválidos (e-mail mal formatado ou campo ausente)"),
+                    @ApiResponse(responseCode = "401", description = "Credenciais inválidas (e-mail não encontrado ou senha incorreta)")
             }
     )
     @PostMapping("/login")
@@ -109,15 +111,21 @@ public class AuthController {
 
     @Operation(
             summary = "Alterar Senha",
-            description = "Altera a senha do usuário autenticado. Exige a senha atual para confirmação.",
+            description = "Altera a senha do usuário autenticado. Exige a senha atual para confirmação de segurança.",
             responses = {
                     @ApiResponse(responseCode = "204", description = "Senha alterada com sucesso"),
-                    @ApiResponse(responseCode = "400", description = "Senha atual incorreta")
+                    @ApiResponse(responseCode = "400", description = "Senha atual incorreta ou nova senha inválida"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
             }
     )
     @PostMapping("/change-password")
     public ResponseEntity<Void> changePassword(
-            @Valid @RequestBody ChangePasswordRequest request,
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Senha atual e nova senha",
+                    content = @Content(examples = @ExampleObject(value = "{\"oldPassword\": \"senhaAtual123\", \"newPassword\": \"novaSenha456\"}"))
+            )
+            @Valid ChangePasswordRequest request,
             Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         User user = loadUserPort.loadById(userId)
@@ -134,27 +142,40 @@ public class AuthController {
 
     @Operation(
             summary = "Esqueci minha senha",
-            description = "Envia um token de redefinição por e-mail. Sempre retorna 200 (não revela se o e-mail existe).",
+            description = "Envia um token de redefinição por e-mail. Sempre retorna 200 por segurança (não revela se o e-mail existe ou não).",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Solicitação processada")
+                    @ApiResponse(responseCode = "200", description = "Solicitação processada (independente do e-mail existir)"),
+                    @ApiResponse(responseCode = "400", description = "E-mail com formato inválido")
             }
     )
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<Void> forgotPassword(
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "E-mail cadastrado na conta",
+                    content = @Content(examples = @ExampleObject(value = "{\"email\": \"lucas@example.com\"}"))
+            )
+            @Valid ForgotPasswordRequest request) {
         forgotPasswordUseCase.execute(request.email());
         return ResponseEntity.ok().build();
     }
 
     @Operation(
             summary = "Redefinir Senha",
-            description = "Redefine a senha usando um token válido obtido via forgot-password.",
+            description = "Redefine a senha usando o token recebido por e-mail via /forgot-password. O token expira em 1 hora.",
             responses = {
                     @ApiResponse(responseCode = "204", description = "Senha redefinida com sucesso"),
-                    @ApiResponse(responseCode = "400", description = "Token inválido ou expirado")
+                    @ApiResponse(responseCode = "400", description = "Token inválido, expirado ou nova senha com menos de 6 caracteres")
             }
     )
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+    public ResponseEntity<Void> resetPassword(
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Token de redefinição e nova senha",
+                    content = @Content(examples = @ExampleObject(value = "{\"token\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\", \"newPassword\": \"novaSenha456\"}"))
+            )
+            @Valid ResetPasswordRequest request) {
         resetPasswordUseCase.execute(request.token(), request.newPassword());
         return ResponseEntity.noContent().build();
     }

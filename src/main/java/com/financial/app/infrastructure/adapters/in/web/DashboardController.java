@@ -6,6 +6,9 @@ import com.financial.app.infrastructure.adapters.in.web.dto.response.BalanceResp
 import com.financial.app.infrastructure.adapters.in.web.dto.response.DashboardSummaryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +32,15 @@ public class DashboardController {
 
     @Operation(
         summary = "Resumo Mensal (Home)",
-        description = "Retorna saldo, total de receitas/despesas, gastos por categoria, orçamentos e medalhas do mês.",
+        description = "Retorna o painel principal do mês com: saldo disponível, patrimônio total, receitas, despesas, gastos por categoria, status dos orçamentos, streak e conquistas recentes. Se month/year não forem informados, usa o mês atual.",
         parameters = {
-            @Parameter(name = "month", description = "Mês de consulta (1-12)", example = "2"),
-            @Parameter(name = "year", description = "Ano de consulta", example = "2026")
+            @Parameter(name = "month", description = "Mês de referência (1-12). Padrão: mês atual", example = "2"),
+            @Parameter(name = "year", description = "Ano de referência. Padrão: ano atual", example = "2026")
+        },
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Resumo mensal retornado com sucesso",
+                    content = @Content(schema = @Schema(implementation = DashboardSummaryResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
         }
     )
     @GetMapping("/summary")
@@ -52,7 +60,12 @@ public class DashboardController {
 
     @Operation(
         summary = "Saldo Acumulado (All-time)",
-        description = "Retorna o saldo total desde o início, sem filtro de data."
+        description = "Retorna o consolidado financeiro completo desde o início: total de receitas, total de despesas, saldo disponível e patrimônio total (incluindo valores em metas).",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Saldo acumulado retornado com sucesso",
+                    content = @Content(schema = @Schema(implementation = BalanceResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+        }
     )
     @GetMapping("/balance")
     public ResponseEntity<BalanceResponse> getAllTimeBalance(Authentication authentication) {

@@ -29,16 +29,19 @@ public class OnboardingController {
 
     @Operation(
         summary = "Finalizar Onboarding (Batch)",
-        description = "Salva em uma única operação a renda mensal, despesas recorrentes e a meta principal do usuário.",
+        description = "Salva em uma única operação atômica a renda mensal, a lista de despesas fixas recorrentes e a meta financeira principal. Deve ser chamado uma vez após o primeiro login (quando `onboardingCompleted = false`).",
         responses = {
-            @ApiResponse(responseCode = "204", description = "Onboarding finalizado com sucesso")
+            @ApiResponse(responseCode = "204", description = "Onboarding finalizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos (renda negativa, despesa sem nome, meta com deadline no passado, etc.)"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
         }
     )
     @PostMapping("/complete")
     public ResponseEntity<Void> completeOnboarding(
-            @RequestBody 
+            @RequestBody
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                content = @Content(examples = @ExampleObject(value = "{\"monthlyIncome\": 5000, \"fixedExpenses\": [{\"name\": \"Aluguel\", \"amount\": 1500, \"category\": \"HOUSING\"}], \"mainGoal\": {\"title\": \"Reserva\", \"targetAmount\": 10000, \"deadline\": \"2026-12-31T00:00:00\"}}"))
+                description = "Configuração inicial completa do usuário",
+                content = @Content(examples = @ExampleObject(value = "{\"monthlyIncome\": 5000, \"fixedExpenses\": [{\"name\": \"Aluguel\", \"amount\": 1500, \"category\": \"HOUSING\", \"iconKey\": \"house\"}, {\"name\": \"Internet\", \"amount\": 100, \"category\": \"UTILITIES\", \"iconKey\": \"wifi\"}], \"mainGoal\": {\"title\": \"Reserva de Emergência\", \"targetAmount\": 10000, \"deadline\": \"2026-12-31T00:00:00\", \"iconKey\": \"shield\"}}"))
             )
             @Valid OnboardingRequest request,
             Authentication authentication

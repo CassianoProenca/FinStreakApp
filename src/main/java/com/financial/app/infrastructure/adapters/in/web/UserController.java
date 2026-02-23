@@ -7,6 +7,7 @@ import com.financial.app.infrastructure.adapters.in.web.dto.request.UpdateProfil
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,16 +30,19 @@ public class UserController {
 
     @Operation(
         summary = "Atualizar perfil",
-        description = "Permite alterar o nome, senha e foto de perfil do usuário logado.",
+        description = "Permite alterar o nome, senha e foto de perfil do usuário logado. Todos os campos são opcionais — envie apenas os que deseja alterar.",
         responses = {
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Perfil atualizado com sucesso")
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Perfil atualizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos (senha com menos de 6 caracteres)"),
+            @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
         }
     )
     @PutMapping("/me")
     public ResponseEntity<Void> updateProfile(
-            @RequestBody 
+            @RequestBody
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                content = @Content(examples = @ExampleObject(value = "{\"name\": \"Lucas Silva\", \"password\": \"novaSenha123\", \"avatarUrl\": \"https://link-da-foto.com\"}"))
+                description = "Campos do perfil a serem atualizados (envie apenas o que mudar)",
+                content = @Content(examples = @ExampleObject(value = "{\"name\": \"Lucas Oliveira\", \"avatarUrl\": \"https://cdn.example.com/avatars/lucas.png\"}"))
             )
             @Valid UpdateProfileRequest request,
             Authentication authentication

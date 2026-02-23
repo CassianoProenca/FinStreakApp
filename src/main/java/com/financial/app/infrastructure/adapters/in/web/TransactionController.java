@@ -44,13 +44,19 @@ public class TransactionController {
 
     @Operation(
             summary = "Remover transação",
-            description = "Exclui permanentemente uma transação do sistema.",
+            description = "Exclui permanentemente uma transação. Apenas o dono da transação pode removê-la.",
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Transação removida com sucesso")
+                    @ApiResponse(responseCode = "204", description = "Transação removida com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "403", description = "A transação não pertence ao usuário autenticado"),
+                    @ApiResponse(responseCode = "404", description = "Transação não encontrada")
             }
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id, Authentication authentication) {
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "ID único da transação", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+            @PathVariable UUID id,
+            Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         deleteTransactionUseCase.execute(userId, id);
         return ResponseEntity.noContent().build();
@@ -58,10 +64,11 @@ public class TransactionController {
 
     @Operation(
             summary = "Criar nova transação",
-            description = "Registra uma entrada ou saída financeira. Suporta recorrência e ícones customizados.",
+            description = "Registra uma entrada ou saída financeira. Suporta recorrência automática mensal ou semanal.",
             responses = {
                     @ApiResponse(responseCode = "201", description = "Transação criada com sucesso"),
-                    @ApiResponse(responseCode = "400", description = "Dados inválidos")
+                    @ApiResponse(responseCode = "400", description = "Dados inválidos (campo obrigatório ausente, valor negativo ou tipo/categoria inválidos)"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
             }
     )
     @PostMapping
@@ -98,14 +105,22 @@ public class TransactionController {
             description = "Edita os dados de uma transação existente. Apenas o dono pode editar.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Transação atualizada com sucesso"),
-                    @ApiResponse(responseCode = "403", description = "Acesso negado"),
+                    @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "403", description = "A transação não pertence ao usuário autenticado"),
                     @ApiResponse(responseCode = "404", description = "Transação não encontrada")
             }
     )
     @PutMapping("/{id}")
     public ResponseEntity<TransactionResponse> update(
+            @Parameter(description = "ID único da transação", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
             @PathVariable UUID id,
-            @RequestBody @Valid CreateTransactionRequest request,
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Novos dados da transação",
+                    content = @Content(examples = @ExampleObject(value = "{\"amount\": 55.00, \"description\": \"Supermercado\", \"type\": \"EXPENSE\", \"category\": \"FOOD\", \"date\": \"2026-02-14T10:00:00\", \"isRecurring\": false}"))
+            )
+            @Valid CreateTransactionRequest request,
             Authentication authentication
     ) {
         UUID userId = UUID.fromString(authentication.getName());
@@ -129,12 +144,18 @@ public class TransactionController {
 
     @Operation(
             summary = "Listar transações com filtros",
-            description = "Retorna uma lista paginada de transações do usuário, permitindo filtrar por data, tipo e categoria.",
+            description = "Retorna uma lista paginada de transações do usuário. Todos os filtros são opcionais e podem ser combinados.",
             parameters = {
-                    @Parameter(name = "startDate", description = "Data inicial (ISO 8601)", example = "2026-02-01T00:00:00"),
-                    @Parameter(name = "endDate", description = "Data final (ISO 8601)", example = "2026-02-28T23:59:59"),
-                    @Parameter(name = "page", description = "Número da página (0-N)", example = "0"),
-                    @Parameter(name = "size", description = "Quantidade de itens por página", example = "10")
+                    @Parameter(name = "startDate", description = "Data inicial do período (ISO 8601)", example = "2026-02-01T00:00:00"),
+                    @Parameter(name = "endDate", description = "Data final do período (ISO 8601)", example = "2026-02-28T23:59:59"),
+                    @Parameter(name = "type", description = "Filtrar por tipo: INCOME, EXPENSE, GOAL_ALLOCATION ou GOAL_WITHDRAWAL", example = "EXPENSE"),
+                    @Parameter(name = "category", description = "Filtrar por categoria: FOOD, TRANSPORT, HOUSING, etc.", example = "FOOD"),
+                    @Parameter(name = "page", description = "Número da página (começa em 0)", example = "0"),
+                    @Parameter(name = "size", description = "Quantidade de itens por página (padrão 10)", example = "10")
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista paginada de transações"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
             }
     )
     @GetMapping

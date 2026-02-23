@@ -8,6 +8,9 @@ import com.financial.app.domain.model.User;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.AchievementResponse;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.GamificationResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,7 +34,16 @@ public class GamificationController {
     private final LoadUserPort loadUserPort;
     private final LoadAchievementsPort loadAchievementsPort;
 
-    @Operation(summary = "Meu Perfil Gamificado", description = "Retorna XP, Nível, Streak e Avatar do usuário logado.")
+    @Operation(
+            summary = "Meu Perfil Gamificado",
+            description = "Retorna o perfil de gamificação completo: nível, XP total, XP dentro do nível atual (para barra de progresso), streak atual, maior streak e data da última atividade.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Perfil retornado com sucesso",
+                            content = @Content(schema = @Schema(implementation = GamificationResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "404", description = "Perfil de gamificação não encontrado")
+            }
+    )
     @GetMapping("/me")
     public ResponseEntity<GamificationResponse> getProfile(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
@@ -55,7 +67,14 @@ public class GamificationController {
         ));
     }
 
-    @Operation(summary = "Minhas Medalhas", description = "Retorna todas as conquistas do usuário logado.")
+    @Operation(
+            summary = "Minhas Medalhas",
+            description = "Retorna todas as conquistas desbloqueadas pelo usuário. Tipos possíveis: FIRST_STEPS (primeira transação), STREAK_7 (7 dias consecutivos), STREAK_30 (30 dias consecutivos).",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de conquistas retornada com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
     @GetMapping("/achievements/me")
     public ResponseEntity<List<AchievementResponse>> getAchievements(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());

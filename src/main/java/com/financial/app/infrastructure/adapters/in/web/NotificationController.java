@@ -4,6 +4,8 @@ import com.financial.app.application.ports.in.GetNotificationsUseCase;
 import com.financial.app.application.ports.in.MarkNotificationReadUseCase;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.NotificationResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +24,14 @@ public class NotificationController {
     private final GetNotificationsUseCase getNotificationsUseCase;
     private final MarkNotificationReadUseCase markNotificationReadUseCase;
 
-    @Operation(summary = "Listar Notificações", description = "Retorna as notificações do usuário, mais recentes primeiro.")
+    @Operation(
+            summary = "Listar Notificações",
+            description = "Retorna todas as notificações do usuário ordenadas da mais recente para a mais antiga. Tipos: STREAK (ofensiva), LEVEL_UP (subiu de nível), ACHIEVEMENT (conquista desbloqueada).",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de notificações retornada com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
     @GetMapping
     public ResponseEntity<List<NotificationResponse>> getNotifications(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
@@ -32,9 +41,20 @@ public class NotificationController {
         return ResponseEntity.ok(responses);
     }
 
-    @Operation(summary = "Marcar como Lida", description = "Marca uma notificação específica como lida.")
+    @Operation(
+            summary = "Marcar como Lida",
+            description = "Marca uma notificação específica como lida. Use para atualizar o badge de notificações não lidas no app.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Notificação marcada como lida"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "404", description = "Notificação não encontrada")
+            }
+    )
     @PatchMapping("/{id}/read")
-    public ResponseEntity<Void> markAsRead(@PathVariable UUID id, Authentication authentication) {
+    public ResponseEntity<Void> markAsRead(
+            @Parameter(description = "ID único da notificação", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+            @PathVariable UUID id,
+            Authentication authentication) {
         markNotificationReadUseCase.execute(id);
         return ResponseEntity.noContent().build();
     }

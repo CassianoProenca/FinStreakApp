@@ -7,6 +7,7 @@ import com.financial.app.domain.model.Budget;
 import com.financial.app.domain.model.enums.TransactionCategory;
 import com.financial.app.infrastructure.adapters.in.web.dto.request.CreateBudgetRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,8 +34,15 @@ public class BudgetController {
     @Operation(
             summary = "Remover orçamento",
             description = "Exclui o limite de gastos para uma categoria no período informado.",
+            parameters = {
+                    @Parameter(name = "category", description = "Categoria do orçamento a remover", required = true, example = "FOOD"),
+                    @Parameter(name = "month", description = "Mês de referência (1-12)", required = true, example = "2"),
+                    @Parameter(name = "year", description = "Ano de referência", required = true, example = "2026")
+            },
             responses = {
-                    @ApiResponse(responseCode = "204", description = "Orçamento removido com sucesso")
+                    @ApiResponse(responseCode = "204", description = "Orçamento removido com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "404", description = "Orçamento não encontrado para a categoria/período informados")
             }
     )
     @DeleteMapping
@@ -51,9 +59,11 @@ public class BudgetController {
 
     @Operation(
             summary = "Definir ou atualizar orçamento",
-            description = "Define um limite de gastos para uma categoria em um mês específico.",
+            description = "Define um limite de gastos para uma categoria em um mês específico. Se já existir, atualiza o valor.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Orçamento salvo com sucesso")
+                    @ApiResponse(responseCode = "200", description = "Orçamento salvo com sucesso"),
+                    @ApiResponse(responseCode = "400", description = "Dados inválidos (categoria ausente, valor negativo ou mês fora do range 1-12)"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
             }
     )
     @PostMapping
@@ -69,14 +79,20 @@ public class BudgetController {
 
     @Operation(
             summary = "Atualizar orçamento existente",
-            description = "Alias para o POST, seguindo o padrão REST para atualizações.",
+            description = "Alias para o POST. Atualiza o limite de uma categoria já existente no período.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Orçamento atualizado com sucesso")
+                    @ApiResponse(responseCode = "200", description = "Orçamento atualizado com sucesso"),
+                    @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
             }
     )
     @PutMapping
     public ResponseEntity<Budget> update(
-            @RequestBody @Valid CreateBudgetRequest request,
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(examples = @ExampleObject(value = "{\"category\": \"FOOD\", \"limitAmount\": 1000, \"month\": 2, \"year\": 2026}"))
+            )
+            @Valid CreateBudgetRequest request,
             Authentication authentication) {
         return processUpsert(request, authentication);
     }
@@ -93,11 +109,23 @@ public class BudgetController {
         return ResponseEntity.ok(budgetUseCase.createOrUpdate(command));
     }
 
-    @Operation(summary = "Listar orçamentos do mês", description = "Retorna todos os limites definidos para o período.")
+    @Operation(
+            summary = "Listar orçamentos do mês",
+            description = "Retorna todos os limites definidos para o período. Se month/year não forem informados, usa o mês atual.",
+            parameters = {
+                    @Parameter(name = "month", description = "Mês de referência (1-12). Padrão: mês atual", example = "2"),
+                    @Parameter(name = "year", description = "Ano de referência. Padrão: ano atual", example = "2026")
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de orçamentos do período"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
     @GetMapping
-    public ResponseEntity<List<Budget>> list(@RequestParam(required = false) Integer month,
-                                            @RequestParam(required = false) Integer year,
-                                            Authentication authentication) {
+    public ResponseEntity<List<Budget>> list(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year,
+            Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         int queryMonth = month != null ? month : LocalDate.now().getMonthValue();
         int queryYear = year != null ? year : LocalDate.now().getYear();
