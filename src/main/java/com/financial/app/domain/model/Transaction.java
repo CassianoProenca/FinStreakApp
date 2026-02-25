@@ -29,4 +29,5 @@ public class Transaction extends BaseDomainEntity {
     private Integer repeatDay;
     private String iconKey;
     private UUID parentTransactionId;
+    private UUID goalId;
 }

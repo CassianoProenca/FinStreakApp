@@ -31,12 +31,18 @@ public class JpaUserAdapter implements LoadUserPort, SaveUserPort, LoadAllUsersP
 
     @Override
     public Optional<User> loadByEmail(String email) {
-        return userJpaRepository.findByEmail(email)
+        if (email == null) return Optional.empty();
+        return userJpaRepository.findByEmail(email.toLowerCase())
                 .map(UserMapper::toDomain);
     }
 
     @Override
     public User save(User user) {
+        // Normalize email to lowercase
+        if (user.getEmail() != null) {
+            user.setEmail(user.getEmail().toLowerCase());
+        }
+
         // If user has an ID, load the existing entity and update it
         if (user.getId() != null) {
             Optional<UserEntity> existingEntityOpt = userJpaRepository.findById(user.getId());

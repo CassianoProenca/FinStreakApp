@@ -24,13 +24,15 @@ public class RegisterUserService implements RegisterUserUseCase {
 
     @Override
     public User execute(RegisterUserCommand command) {
-        if (loadUserPort.loadByEmail(command.email()).isPresent()) {
+        String normalizedEmail = command.email().toLowerCase();
+
+        if (loadUserPort.loadByEmail(normalizedEmail).isPresent()) {
             throw new BusinessException("E-mail já cadastrado");
         }
 
         User newUser = User.builder()
                 .name(command.name())
-                .email(command.email())
+                .email(normalizedEmail)
                 .password(command.password())
                 .onboardingCompleted(false)
                 .avatarUrl("https://ui-avatars.com/api/?name=" + command.name().replace(" ", "+") + "&background=random")

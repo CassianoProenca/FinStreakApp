@@ -74,10 +74,12 @@ public class DepositInGoalService implements DepositInGoalUseCase {
         Transaction transaction = Transaction.builder()
                 .userId(userId)
                 .amount(amount)
-                .description("Aporte na meta: " + goal.getTitle() + (description != null ? " - " + description : ""))
+                .description("Aporte - " + goal.getTitle())
                 .type(TransactionType.GOAL_ALLOCATION)
                 .category(TransactionCategory.OTHER)
                 .date(LocalDateTime.now())
+                .iconKey(goal.getIconKey())
+                .goalId(goalId)
                 .build();
         saveTransactionPort.save(transaction);
 

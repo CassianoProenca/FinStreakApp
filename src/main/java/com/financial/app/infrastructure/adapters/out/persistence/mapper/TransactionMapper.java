@@ -23,6 +23,7 @@ public class TransactionMapper {
                 .repeatDay(entity.getRepeatDay())
                 .iconKey(entity.getIconKey())
                 .parentTransactionId(entity.getParentTransactionId())
+                .goalId(entity.getGoalId())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .version(entity.getVersion())
@@ -46,6 +47,7 @@ public class TransactionMapper {
                 .repeatDay(domain.getRepeatDay())
                 .iconKey(domain.getIconKey())
                 .parentTransactionId(domain.getParentTransactionId())
+                .goalId(domain.getGoalId())
                 .build();
 
         entity.setId(domain.getId());

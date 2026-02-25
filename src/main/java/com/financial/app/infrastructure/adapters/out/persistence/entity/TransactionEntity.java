@@ -54,4 +54,7 @@ public class TransactionEntity extends AbstractBaseEntity {
 
     @Column(name = "parent_transaction_id")
     private UUID parentTransactionId;
+
+    @Column(name = "goal_id")
+    private UUID goalId;
 }

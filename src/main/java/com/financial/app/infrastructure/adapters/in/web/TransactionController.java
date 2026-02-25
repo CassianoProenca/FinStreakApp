@@ -204,7 +204,8 @@ public class TransactionController {
                 transaction.isRecurring(),
                 transaction.getFrequency(),
                 transaction.getRepeatDay(),
-                transaction.getIconKey()
+                transaction.getIconKey(),
+                transaction.getGoalId()
         );
     }
 }

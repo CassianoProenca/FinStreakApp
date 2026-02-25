@@ -2,9 +2,9 @@ spring:
   application:
     name: FinStreak
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:app_db}
-    username: ${DB_USER:app_user}
-    password: ${DB_PASS:app_pass}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASS}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -17,10 +17,10 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT}
 
 jwt:
-  secret: ${JWT_SECRET:u7i8o9p0q1w2e3r4t5y6u7i8o9p0q1w2}
+  secret: ${JWT_SECRET}
 
 logging:
   level:

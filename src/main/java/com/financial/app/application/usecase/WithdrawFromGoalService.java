@@ -71,10 +71,12 @@ public class WithdrawFromGoalService implements WithdrawFromGoalUseCase {
         Transaction transaction = Transaction.builder()
                 .userId(userId)
                 .amount(amount)
-                .description("Resgate da meta: " + goal.getTitle() + (description != null ? " - " + description : ""))
+                .description("Resgate - " + goal.getTitle())
                 .type(TransactionType.GOAL_WITHDRAWAL)
                 .category(TransactionCategory.OTHER)
                 .date(LocalDateTime.now())
+                .iconKey(goal.getIconKey())
+                .goalId(goalId)
                 .build();
         saveTransactionPort.save(transaction);
 
