@@ -17,6 +17,7 @@ public record CreateTransactionCommand(
     boolean isRecurring,
     String frequency,
     Integer repeatDay,
-    String iconKey
+    String iconKey,
+    Integer installments
 ) {}
 

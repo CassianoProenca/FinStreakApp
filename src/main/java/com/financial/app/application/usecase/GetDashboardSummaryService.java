@@ -56,32 +56,26 @@ public class GetDashboardSummaryService implements GetDashboardSummaryUseCase {
         LocalDateTime start = yearMonth.atDay(1).atStartOfDay();
         LocalDateTime end = yearMonth.atEndOfMonth().atTime(LocalTime.MAX);
 
+        // Opening balance: all transactions strictly before this month (#9)
+        TransactionQuery priorQuery = new TransactionQuery(userId, null, start.minusNanos(1), null, null, 0, Integer.MAX_VALUE);
+        List<Transaction> priorTransactions = loadTransactionPort.loadAllByQuery(priorQuery);
+        BigDecimal openingBalance = computeBalance(priorTransactions);
+
         TransactionQuery query = new TransactionQuery(userId, start, end, null, null, 0, Integer.MAX_VALUE);
         List<Transaction> transactions = loadTransactionPort.loadAllByQuery(query);
 
-        BigDecimal totalIncome = transactions.stream()
-                .filter(t -> t.getType() == TransactionType.INCOME)
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalIncome = sum(transactions, TransactionType.INCOME);
+        BigDecimal totalExpenses = sum(transactions, TransactionType.EXPENSE);
+        BigDecimal totalAllocations = sum(transactions, TransactionType.GOAL_ALLOCATION);
+        BigDecimal totalWithdrawals = sum(transactions, TransactionType.GOAL_WITHDRAWAL);
 
-        BigDecimal totalExpenses = transactions.stream()
-                .filter(t -> t.getType() == TransactionType.EXPENSE)
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Available balance includes carry-over from previous months
+        BigDecimal availableBalance = openingBalance
+                .add(totalIncome)
+                .add(totalWithdrawals)
+                .subtract(totalExpenses)
+                .subtract(totalAllocations);
 
-        BigDecimal totalAllocations = transactions.stream()
-                .filter(t -> t.getType() == TransactionType.GOAL_ALLOCATION)
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalWithdrawals = transactions.stream()
-                .filter(t -> t.getType() == TransactionType.GOAL_WITHDRAWAL)
-                .map(Transaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal availableBalance = totalIncome.add(totalWithdrawals).subtract(totalExpenses).subtract(totalAllocations);
-
-        // Sum of all goals (total, not filtered by month/year)
         BigDecimal totalInGoals = loadGoalsPort.loadByUserId(userId).stream()
                 .map(Goal::getCurrentAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -93,7 +87,6 @@ public class GetDashboardSummaryService implements GetDashboardSummaryUseCase {
                         Collectors.mapping(Transaction::getAmount, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
                 ));
 
-        // Calculate Budgets
         List<Budget> budgetList = budgetPort.findByUserAndPeriod(userId, month, year);
         List<BudgetSummary> budgets = budgetList.stream().map(b -> {
             BigDecimal spent = spendingByCategory.getOrDefault(b.getCategory().name(), BigDecimal.ZERO);
@@ -106,13 +99,27 @@ public class GetDashboardSummaryService implements GetDashboardSummaryUseCase {
             return new BudgetSummary(b.getCategory().name(), b.getLimitAmount(), spent, remaining, percentage);
         }).collect(Collectors.toList());
 
-        // Get Achievements
         List<Achievement> achievements = loadAchievementsPort.loadByUserId(userId);
 
         int currentStreak = loadGamificationProfilePort.loadByUserId(userId)
                 .map(GamificationProfile::getCurrentStreak)
                 .orElse(0);
 
-        return new DashboardSummaryResponse(totalIncome, totalExpenses, availableBalance, availableBalance.add(totalInGoals), spendingByCategory, budgets, achievements, currentStreak);
+        return new DashboardSummaryResponse(totalIncome, totalExpenses, availableBalance,
+                availableBalance.add(totalInGoals), spendingByCategory, budgets, achievements, currentStreak);
+    }
+
+    private BigDecimal computeBalance(List<Transaction> transactions) {
+        return sum(transactions, TransactionType.INCOME)
+                .add(sum(transactions, TransactionType.GOAL_WITHDRAWAL))
+                .subtract(sum(transactions, TransactionType.EXPENSE))
+                .subtract(sum(transactions, TransactionType.GOAL_ALLOCATION));
+    }
+
+    private BigDecimal sum(List<Transaction> transactions, TransactionType type) {
+        return transactions.stream()
+                .filter(t -> t.getType() == type)
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

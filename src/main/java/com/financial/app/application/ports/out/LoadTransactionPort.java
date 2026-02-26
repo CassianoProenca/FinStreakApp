@@ -11,4 +11,5 @@ public interface LoadTransactionPort {
     Optional<Transaction> loadById(UUID id);
     PagedResult<Transaction> loadByQuery(TransactionQuery query);
     List<Transaction> loadAllByQuery(TransactionQuery query);
+    List<Transaction> loadChildInstallments(UUID parentId);
 }

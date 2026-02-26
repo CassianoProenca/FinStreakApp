@@ -1,6 +1,8 @@
 package com.financial.app.application.usecase;
 
 import com.financial.app.application.ports.in.command.OnboardingCommand;
+import com.financial.app.application.ports.in.command.OnboardingExpenseItem;
+import com.financial.app.application.ports.in.command.OnboardingGoalItem;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveGoalPort;
 import com.financial.app.application.ports.out.SaveTransactionPort;
@@ -9,7 +11,6 @@ import com.financial.app.domain.exception.BusinessException;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.User;
-import com.financial.app.infrastructure.adapters.in.web.dto.request.OnboardingRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -52,17 +53,18 @@ class CompleteOnboardingUseCaseTest {
                 .onboardingCompleted(false)
                 .build();
 
-        OnboardingRequest.ExpenseRequest expense1 = new OnboardingRequest.ExpenseRequest("Rent", new BigDecimal("1500"), "HOUSING", "house");
-        OnboardingRequest.ExpenseRequest expense2 = new OnboardingRequest.ExpenseRequest("Internet", new BigDecimal("100"), "UTILITIES", "wifi");
-        OnboardingRequest.ExpenseRequest expense3 = new OnboardingRequest.ExpenseRequest("Netflix", new BigDecimal("50"), "LEISURE", "play");
+        // Use domain value objects instead of OnboardingRequest inner types (#29)
+        OnboardingExpenseItem expense1 = new OnboardingExpenseItem("Rent", new BigDecimal("1500"), "HOUSING", "house");
+        OnboardingExpenseItem expense2 = new OnboardingExpenseItem("Internet", new BigDecimal("100"), "UTILITIES", "wifi");
+        OnboardingExpenseItem expense3 = new OnboardingExpenseItem("Netflix", new BigDecimal("50"), "LEISURE", "play");
 
-        OnboardingRequest.GoalRequest goalRequest = new OnboardingRequest.GoalRequest("Buy Car", new BigDecimal("50000"), LocalDateTime.now().plusYears(1), "car");
+        OnboardingGoalItem goalItem = new OnboardingGoalItem("Buy Car", new BigDecimal("50000"), LocalDateTime.now().plusYears(1), "car");
 
         command = new OnboardingCommand(
                 user.getId(),
                 new BigDecimal("5000"),
                 List.of(expense1, expense2, expense3),
-                goalRequest
+                goalItem
         );
     }
 
@@ -73,8 +75,8 @@ class CompleteOnboardingUseCaseTest {
 
         completeOnboardingService.execute(command);
 
-        // Verify Income + 3 Expenses = 4 Transactions
-        verify(saveTransactionPort, times(4)).save(any(Transaction.class));
+        // No income transaction is created any more (#10) — only the 3 recurring expenses
+        verify(saveTransactionPort, times(3)).save(any(Transaction.class));
 
         // Verify Goal creation
         verify(saveGoalPort, times(1)).save(any(Goal.class));
@@ -82,7 +84,7 @@ class CompleteOnboardingUseCaseTest {
         // Verify User Update
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
         verify(saveUserPort).save(userCaptor.capture());
-        
+
         User savedUser = userCaptor.getValue();
         assertTrue(savedUser.isOnboardingCompleted(), "User should be marked as onboarding completed");
     }

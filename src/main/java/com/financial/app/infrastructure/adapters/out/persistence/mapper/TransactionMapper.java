@@ -24,6 +24,8 @@ public class TransactionMapper {
                 .iconKey(entity.getIconKey())
                 .parentTransactionId(entity.getParentTransactionId())
                 .goalId(entity.getGoalId())
+                .totalInstallments(entity.getTotalInstallments())
+                .currentInstallment(entity.getCurrentInstallment())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .version(entity.getVersion())
@@ -48,6 +50,8 @@ public class TransactionMapper {
                 .iconKey(domain.getIconKey())
                 .parentTransactionId(domain.getParentTransactionId())
                 .goalId(domain.getGoalId())
+                .totalInstallments(domain.getTotalInstallments())
+                .currentInstallment(domain.getCurrentInstallment())
                 .build();
 
         entity.setId(domain.getId());

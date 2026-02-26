@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "fin_budgets", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"user_id", "category", "month", "year"})
+    @UniqueConstraint(columnNames = {"user_id", "category", "budget_month", "budget_year"})
 })
 @Getter
 @Setter
@@ -28,9 +28,9 @@ public class BudgetEntity extends AbstractBaseEntity {
     @Column(name = "limit_amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal limitAmount;
 
-    @Column(nullable = false)
+    @Column(name = "budget_month", nullable = false)
     private int month;
 
-    @Column(nullable = false)
+    @Column(name = "budget_year", nullable = false)
     private int year;
 }

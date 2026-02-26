@@ -45,6 +45,12 @@ public record TransactionResponse(
         String iconKey,
 
         @Schema(description = "ID da meta vinculada a esta transação (apenas para aportes/resgates)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
-        UUID goalId
+        UUID goalId,
+
+        @Schema(description = "Número total de parcelas (nulo se não parcelado)", example = "12")
+        Integer totalInstallments,
+
+        @Schema(description = "Número da parcela atual (nulo se não parcelado)", example = "1")
+        Integer currentInstallment
 
 ) {}

@@ -10,7 +10,6 @@ import com.financial.app.application.ports.out.SaveGoalPort;
 import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.GoalDeposit;
-import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.AchievementType;
 import com.financial.app.domain.model.enums.GoalStatus;
 import com.financial.app.domain.model.enums.TransactionType;
@@ -60,9 +59,7 @@ class GoalDepositUseCaseTest {
     @DisplayName("Should update goal balance and create history record")
     void shouldDepositSuccessfully() {
         Goal goal = Goal.builder()
-                .id(goalId)
-                .userId(userId)
-                .title("Viagem")
+                .id(goalId).userId(userId).title("Viagem")
                 .currentAmount(new BigDecimal("1000"))
                 .targetAmount(new BigDecimal("5000"))
                 .status(GoalStatus.IN_PROGRESS)
@@ -73,20 +70,20 @@ class GoalDepositUseCaseTest {
         service.execute(userId, goalId, new BigDecimal("500"), "Poupança mensal");
 
         assertEquals(new BigDecimal("1500"), goal.getCurrentAmount());
-        assertEquals(GoalStatus.IN_PROGRESS, goal.getStatus()); // not yet completed
+        assertEquals(GoalStatus.IN_PROGRESS, goal.getStatus());
         verify(saveGoalPort).save(goal);
         verify(goalHistoryPort).save(any(GoalDeposit.class));
-        verify(saveTransactionPort).save(argThat(t -> t.getType() == TransactionType.GOAL_ALLOCATION && t.getAmount().equals(new BigDecimal("500"))));
+        verify(saveTransactionPort).save(argThat(t ->
+                t.getType() == TransactionType.GOAL_ALLOCATION && t.getAmount().equals(new BigDecimal("500"))));
         verify(checkStreakUseCase).execute(userId);
-        verify(saveAchievementPort, never()).save(any()); // no achievement yet
+        verify(saveAchievementPort, never()).save(any());
     }
 
     @Test
     @DisplayName("Should award GOAL_SETTER when first goal is completed")
     void shouldAwardGoalSetterOnCompletion() {
         Goal goal = Goal.builder()
-                .id(goalId)
-                .userId(userId)
+                .id(goalId).userId(userId)
                 .currentAmount(new BigDecimal("900"))
                 .targetAmount(new BigDecimal("1000"))
                 .status(GoalStatus.IN_PROGRESS)
@@ -94,21 +91,20 @@ class GoalDepositUseCaseTest {
 
         when(loadGoalsPort.loadByUserId(userId)).thenReturn(List.of(goal));
         when(loadAchievementsPort.hasAchievement(userId, AchievementType.GOAL_SETTER)).thenReturn(false);
-        when(loadAchievementsPort.hasAchievement(userId, AchievementType.ELITE_SAVER)).thenReturn(true);
 
         service.execute(userId, goalId, new BigDecimal("100"), "Depósito final");
 
         assertEquals(GoalStatus.COMPLETED, goal.getStatus());
         verify(saveAchievementPort).save(argThat(a -> a.getType() == AchievementType.GOAL_SETTER));
+        // ELITE_SAVER is now awarded at level 10 in CheckStreakService, not here
         verify(saveAchievementPort, never()).save(argThat(a -> a.getType() == AchievementType.ELITE_SAVER));
     }
 
     @Test
-    @DisplayName("Should award ELITE_SAVER when goal with target >= 1000 is completed")
-    void shouldAwardEliteSaverForHighValueGoal() {
+    @DisplayName("Should NOT award ELITE_SAVER from DepositInGoalService (moved to level 10 in CheckStreakService)")
+    void eliteSaverNotAwardedFromDeposit() {
         Goal goal = Goal.builder()
-                .id(goalId)
-                .userId(userId)
+                .id(goalId).userId(userId)
                 .currentAmount(new BigDecimal("4500"))
                 .targetAmount(new BigDecimal("5000"))
                 .status(GoalStatus.IN_PROGRESS)
@@ -116,30 +112,8 @@ class GoalDepositUseCaseTest {
 
         when(loadGoalsPort.loadByUserId(userId)).thenReturn(List.of(goal));
         when(loadAchievementsPort.hasAchievement(userId, AchievementType.GOAL_SETTER)).thenReturn(false);
-        when(loadAchievementsPort.hasAchievement(userId, AchievementType.ELITE_SAVER)).thenReturn(false);
 
         service.execute(userId, goalId, new BigDecimal("500"), "Meta concluída");
-
-        assertEquals(GoalStatus.COMPLETED, goal.getStatus());
-        verify(saveAchievementPort).save(argThat(a -> a.getType() == AchievementType.GOAL_SETTER));
-        verify(saveAchievementPort).save(argThat(a -> a.getType() == AchievementType.ELITE_SAVER));
-    }
-
-    @Test
-    @DisplayName("Should NOT award ELITE_SAVER when goal target is below 1000")
-    void shouldNotAwardEliteSaverForLowValueGoal() {
-        Goal goal = Goal.builder()
-                .id(goalId)
-                .userId(userId)
-                .currentAmount(new BigDecimal("400"))
-                .targetAmount(new BigDecimal("500"))
-                .status(GoalStatus.IN_PROGRESS)
-                .build();
-
-        when(loadGoalsPort.loadByUserId(userId)).thenReturn(List.of(goal));
-        when(loadAchievementsPort.hasAchievement(userId, AchievementType.GOAL_SETTER)).thenReturn(false);
-
-        service.execute(userId, goalId, new BigDecimal("100"), "Meta pequena");
 
         assertEquals(GoalStatus.COMPLETED, goal.getStatus());
         verify(saveAchievementPort).save(argThat(a -> a.getType() == AchievementType.GOAL_SETTER));
@@ -150,8 +124,7 @@ class GoalDepositUseCaseTest {
     @DisplayName("Should NOT award achievements when goal is not yet completed")
     void shouldNotAwardAchievementsWhenGoalNotComplete() {
         Goal goal = Goal.builder()
-                .id(goalId)
-                .userId(userId)
+                .id(goalId).userId(userId)
                 .currentAmount(new BigDecimal("100"))
                 .targetAmount(new BigDecimal("5000"))
                 .status(GoalStatus.IN_PROGRESS)
@@ -170,8 +143,7 @@ class GoalDepositUseCaseTest {
     @DisplayName("Should NOT award GOAL_SETTER if already earned")
     void shouldNotAwardGoalSetterIfAlreadyEarned() {
         Goal goal = Goal.builder()
-                .id(goalId)
-                .userId(userId)
+                .id(goalId).userId(userId)
                 .currentAmount(new BigDecimal("900"))
                 .targetAmount(new BigDecimal("1000"))
                 .status(GoalStatus.IN_PROGRESS)
@@ -179,7 +151,6 @@ class GoalDepositUseCaseTest {
 
         when(loadGoalsPort.loadByUserId(userId)).thenReturn(List.of(goal));
         when(loadAchievementsPort.hasAchievement(userId, AchievementType.GOAL_SETTER)).thenReturn(true);
-        when(loadAchievementsPort.hasAchievement(userId, AchievementType.ELITE_SAVER)).thenReturn(true);
 
         service.execute(userId, goalId, new BigDecimal("100"), "Meta concluída");
 

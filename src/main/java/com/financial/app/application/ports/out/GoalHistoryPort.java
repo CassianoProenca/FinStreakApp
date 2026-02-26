@@ -7,4 +7,5 @@ import java.util.UUID;
 public interface GoalHistoryPort {
     GoalDeposit save(GoalDeposit deposit);
     List<GoalDeposit> findByGoalId(UUID goalId);
+    void deleteByGoalId(UUID goalId);
 }

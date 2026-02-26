@@ -42,14 +42,18 @@ class DashboardSummaryServiceTest {
     @DisplayName("Should correctly sum income and expenses for the dashboard")
     void shouldCalculateDashboardCorrectly() {
         UUID userId = UUID.randomUUID();
-        
+
         List<Transaction> transactions = List.of(
                 Transaction.builder().amount(new BigDecimal("5000")).type(TransactionType.INCOME).category(TransactionCategory.SALARY).build(),
                 Transaction.builder().amount(new BigDecimal("1500")).type(TransactionType.EXPENSE).category(TransactionCategory.HOUSING).build(),
                 Transaction.builder().amount(new BigDecimal("500")).type(TransactionType.EXPENSE).category(TransactionCategory.FOOD).build()
         );
 
-        when(loadTransactionPort.loadAllByQuery(any())).thenReturn(transactions);
+        // First call = prior months (opening balance) → empty list
+        // Second call = current month → full transaction list
+        when(loadTransactionPort.loadAllByQuery(any()))
+                .thenReturn(List.of())
+                .thenReturn(transactions);
         when(loadGamificationProfilePort.loadByUserId(userId)).thenReturn(Optional.empty());
         when(budgetPort.findByUserAndPeriod(any(), anyInt(), anyInt())).thenReturn(List.of());
         when(loadAchievementsPort.loadByUserId(userId)).thenReturn(List.of());

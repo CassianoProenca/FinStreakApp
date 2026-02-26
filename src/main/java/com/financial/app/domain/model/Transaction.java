@@ -30,4 +30,6 @@ public class Transaction extends BaseDomainEntity {
     private String iconKey;
     private UUID parentTransactionId;
     private UUID goalId;
+    private Integer totalInstallments;
+    private Integer currentInstallment;
 }

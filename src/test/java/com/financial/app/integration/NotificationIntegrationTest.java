@@ -40,7 +40,7 @@ class NotificationIntegrationTest extends BaseIntegrationTest {
                 TransactionType.INCOME,
                 TransactionCategory.SALARY,
                 LocalDateTime.now(),
-                false, null, null, "money"
+                false, null, null, "money", null
         );
 
         mockMvc.perform(post("/api/transactions")
@@ -73,7 +73,7 @@ class NotificationIntegrationTest extends BaseIntegrationTest {
                 TransactionType.INCOME,
                 TransactionCategory.OTHER,
                 LocalDateTime.now(),
-                false, null, null, "work"
+                false, null, null, "work", null
         );
 
         mockMvc.perform(post("/api/transactions")

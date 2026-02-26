@@ -30,4 +30,9 @@ public class JpaGoalHistoryAdapter implements GoalHistoryPort {
                 .map(GoalHistoryMapper::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void deleteByGoalId(UUID goalId) {
+        repository.deleteByGoalId(goalId);
+    }
 }

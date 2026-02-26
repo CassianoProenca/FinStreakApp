@@ -29,6 +29,8 @@ public class DeleteTransactionService implements DeleteTransactionUseCase {
             throw new UnauthorizedAccessException("Você não tem permissão para excluir esta transação");
         }
 
+        // Delete child installments / recurring instances first to avoid FK violation
+        deleteTransactionPort.deleteByParentId(transactionId);
         deleteTransactionPort.deleteById(transactionId);
     }
 }

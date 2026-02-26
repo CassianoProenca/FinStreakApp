@@ -49,7 +49,15 @@ public class DepositInGoalService implements DepositInGoalUseCase {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Meta não encontrada"));
 
-        // 2. Atualizar o valor atual da meta
+        // 2. Block deposits on COMPLETED or CANCELLED goals (#15)
+        if (goal.getStatus() == GoalStatus.COMPLETED) {
+            throw new com.financial.app.domain.exception.BusinessException("Não é possível depositar em uma meta já concluída");
+        }
+        if (goal.getStatus() == GoalStatus.CANCELLED) {
+            throw new com.financial.app.domain.exception.BusinessException("Não é possível depositar em uma meta cancelada");
+        }
+
+        // 3. Atualizar o valor atual da meta
         BigDecimal newAmount = goal.getCurrentAmount().add(amount);
         goal.setCurrentAmount(newAmount);
 
@@ -86,8 +94,12 @@ public class DepositInGoalService implements DepositInGoalUseCase {
         // 6. Ganhar Streak/XP por poupar
         checkStreakUseCase.execute(userId);
 
-        // 7. Verificar achievements de meta concluída
+        // 7. Verificar achievements e notificação de meta concluída
         if (goal.getStatus() == GoalStatus.COMPLETED) {
+            // Fire GOAL_COMPLETED notification (#23)
+            notificationPort.notifyUser(userId,
+                    "🎯 Parabéns! Você concluiu a meta \"" + goal.getTitle() + "\"!",
+                    NotificationType.GOAL_COMPLETED);
             checkAndAwardGoalAchievements(userId, goal.getTargetAmount());
         }
 
@@ -95,21 +107,14 @@ public class DepositInGoalService implements DepositInGoalUseCase {
     }
 
     private void checkAndAwardGoalAchievements(UUID userId, BigDecimal targetAmount) {
-        // GOAL_SETTER: primeira meta concluída (qualquer valor)
+        // GOAL_SETTER: primeira meta concluída — grant XP (#17)
         if (!loadAchievementsPort.hasAchievement(userId, AchievementType.GOAL_SETTER)) {
             awardAchievement(userId, AchievementType.GOAL_SETTER,
-                    "Sonhador Realizado", "Você concluiu sua primeira meta financeira!");
-        }
-
-        // ELITE_SAVER: meta concluída com targetAmount >= 1000
-        if (targetAmount.compareTo(new BigDecimal("1000")) >= 0
-                && !loadAchievementsPort.hasAchievement(userId, AchievementType.ELITE_SAVER)) {
-            awardAchievement(userId, AchievementType.ELITE_SAVER,
-                    "Poupador de Elite", "Você concluiu uma meta de R$1.000 ou mais!");
+                    "Sonhador Realizado", "Você concluiu sua primeira meta financeira!", 300);
         }
     }
 
-    private void awardAchievement(UUID userId, AchievementType type, String name, String description) {
+    private void awardAchievement(UUID userId, AchievementType type, String name, String description, long xp) {
         Achievement achievement = Achievement.builder()
                 .userId(userId)
                 .type(type)

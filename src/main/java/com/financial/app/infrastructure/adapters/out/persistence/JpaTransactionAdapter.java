@@ -5,6 +5,7 @@ import com.financial.app.application.ports.out.CheckTransactionInstancePort;
 import com.financial.app.application.ports.out.DeleteTransactionPort;
 import com.financial.app.application.ports.out.LoadRecurringTransactionsPort;
 import com.financial.app.application.ports.out.LoadTransactionPort;
+import com.financial.app.application.ports.out.LoadUpcomingTransactionsPort;
 import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.domain.model.PagedResult;
 import com.financial.app.domain.model.Transaction;
@@ -27,7 +28,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
-public class JpaTransactionAdapter implements SaveTransactionPort, LoadTransactionPort, LoadRecurringTransactionsPort, CheckTransactionInstancePort, DeleteTransactionPort {
+public class JpaTransactionAdapter implements SaveTransactionPort, LoadTransactionPort, LoadRecurringTransactionsPort, CheckTransactionInstancePort, DeleteTransactionPort, LoadUpcomingTransactionsPort {
 
     private final TransactionJpaRepository transactionJpaRepository;
 
@@ -38,6 +39,11 @@ public class JpaTransactionAdapter implements SaveTransactionPort, LoadTransacti
     @Override
     public void deleteById(UUID id) {
         transactionJpaRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteByParentId(UUID parentId) {
+        transactionJpaRepository.deleteByParentTransactionId(parentId);
     }
 
     @Override
@@ -76,6 +82,8 @@ public class JpaTransactionAdapter implements SaveTransactionPort, LoadTransacti
                 existingEntity.setRepeatDay(transaction.getRepeatDay());
                 existingEntity.setIconKey(transaction.getIconKey());
                 existingEntity.setParentTransactionId(transaction.getParentTransactionId());
+                existingEntity.setTotalInstallments(transaction.getTotalInstallments());
+                existingEntity.setCurrentInstallment(transaction.getCurrentInstallment());
 
                 TransactionEntity savedEntity = transactionJpaRepository.save(existingEntity);
                 return TransactionMapper.toDomain(savedEntity);
@@ -90,7 +98,10 @@ public class JpaTransactionAdapter implements SaveTransactionPort, LoadTransacti
     @Override
     public PagedResult<Transaction> loadByQuery(TransactionQuery query) {
         Specification<TransactionEntity> spec = buildSpecification(query);
-        Pageable pageable = PageRequest.of(query.page(), query.size(), Sort.by("date").descending());
+        org.springframework.data.domain.Sort sort = "asc".equalsIgnoreCase(query.sortDir())
+                ? Sort.by(query.sortBy()).ascending()
+                : Sort.by(query.sortBy()).descending();
+        Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
 
         Page<TransactionEntity> page = transactionJpaRepository.findAll(spec, pageable);
 
@@ -116,6 +127,22 @@ public class JpaTransactionAdapter implements SaveTransactionPort, LoadTransacti
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Transaction> loadChildInstallments(UUID parentId) {
+        return transactionJpaRepository.findByParentTransactionId(parentId).stream()
+                .map(TransactionMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Transaction> loadFutureInstallments(UUID userId, LocalDateTime after) {
+        return transactionJpaRepository
+                .findByUserIdAndParentTransactionIdIsNotNullAndDateAfterOrderByDateAsc(userId, after)
+                .stream()
+                .map(TransactionMapper::toDomain)
+                .collect(Collectors.toList());
+    }
+
     private Specification<TransactionEntity> buildSpecification(TransactionQuery query) {
         return (root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -136,6 +163,14 @@ public class JpaTransactionAdapter implements SaveTransactionPort, LoadTransacti
 
             if (query.category() != null) {
                 predicates.add(criteriaBuilder.equal(root.get("category"), query.category()));
+            }
+
+            // Description search (#26)
+            if (query.description() != null && !query.description().isBlank()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("description")),
+                        "%" + query.description().toLowerCase() + "%"
+                ));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

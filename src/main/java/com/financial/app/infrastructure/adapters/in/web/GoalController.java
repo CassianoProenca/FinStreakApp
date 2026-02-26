@@ -8,11 +8,14 @@ import com.financial.app.application.ports.in.UpdateGoalUseCase;
 import com.financial.app.application.ports.in.WithdrawFromGoalUseCase;
 import com.financial.app.application.ports.in.command.CreateGoalCommand;
 import com.financial.app.application.ports.out.GoalHistoryPort;
+import com.financial.app.domain.exception.ResourceNotFoundException;
+import com.financial.app.domain.exception.UnauthorizedAccessException;
 import com.financial.app.domain.model.Goal;
 import com.financial.app.domain.model.GoalDeposit;
 import com.financial.app.infrastructure.adapters.in.web.dto.request.CreateGoalRequest;
 import com.financial.app.infrastructure.adapters.in.web.dto.request.GoalDepositRequest;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.GoalResponse;
+import com.financial.app.application.ports.out.LoadGoalsPort;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -43,6 +46,7 @@ public class GoalController {
     private final DepositInGoalUseCase depositInGoalUseCase;
     private final WithdrawFromGoalUseCase withdrawFromGoalUseCase;
     private final GoalHistoryPort goalHistoryPort;
+    private final LoadGoalsPort loadGoalsPort;
 
     @Operation(
             summary = "Remover meta",
@@ -192,14 +196,45 @@ public class GoalController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Histórico retornado com sucesso"),
                     @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "403", description = "A meta não pertence ao usuário autenticado"),
                     @ApiResponse(responseCode = "404", description = "Meta não encontrada")
             }
     )
     @GetMapping("/{id}/history")
     public ResponseEntity<List<GoalDeposit>> getHistory(
             @Parameter(description = "ID único da meta", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
-            @PathVariable UUID id) {
+            @PathVariable UUID id,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        // Verify ownership (IDOR fix)
+        loadGoalsPort.loadByUserId(userId).stream()
+                .filter(g -> g.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Meta não encontrada"));
         return ResponseEntity.ok(goalHistoryPort.findByGoalId(id));
+    }
+
+    @Operation(
+            summary = "Buscar meta por ID",
+            description = "Retorna os detalhes de uma meta específica do usuário autenticado.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Meta retornada com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "403", description = "A meta não pertence ao usuário autenticado"),
+                    @ApiResponse(responseCode = "404", description = "Meta não encontrada")
+            }
+    )
+    @GetMapping("/{id}")
+    public ResponseEntity<GoalResponse> getById(
+            @Parameter(description = "ID único da meta", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+            @PathVariable UUID id,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        Goal goal = loadGoalsPort.loadByUserId(userId).stream()
+                .filter(g -> g.getId().equals(id))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Meta não encontrada"));
+        return ResponseEntity.ok(toResponse(goal));
     }
 
     @Operation(

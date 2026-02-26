@@ -8,6 +8,7 @@ import com.financial.app.domain.model.Transaction;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -33,43 +34,58 @@ public class ProcessRecurringTransactionsService implements ProcessRecurringTran
     public void execute() {
         List<Transaction> parentTransactions = loadRecurringTransactionsPort.loadActiveRecurring();
         LocalDateTime now = LocalDateTime.now();
-        
-        // Define o início e fim do mês atual para checagem
-        LocalDateTime startOfMonth = now.withDayOfMonth(1).with(LocalTime.MIN);
-        LocalDateTime endOfMonth = now.withDayOfMonth(now.getMonth().length(now.toLocalDate().isLeapYear())).with(LocalTime.MAX);
 
         for (Transaction parent : parentTransactions) {
-            // Se hoje for o dia de repetir OU se o dia já passou mas ainda não criamos a instância do mês
-            boolean isTimeToProcess = now.getDayOfMonth() >= (parent.getRepeatDay() != null ? parent.getRepeatDay() : 1);
-            
-            if (isTimeToProcess) {
-                boolean alreadyExists = checkTransactionInstancePort.existsInstanceInPeriod(parent.getId(), startOfMonth, endOfMonth);
-                
-                if (!alreadyExists) {
-                    createInstanceForCurrentMonth(parent, now);
-                }
+            String frequency = parent.getFrequency();
+            if ("WEEKLY".equalsIgnoreCase(frequency)) {
+                processWeekly(parent, now);
+            } else {
+                // Default: MONTHLY
+                processMonthly(parent, now);
             }
         }
     }
 
-    private void createInstanceForCurrentMonth(Transaction parent, LocalDateTime now) {
-        int day = parent.getRepeatDay() != null ? parent.getRepeatDay() : parent.getDate().getDayOfMonth();
-        // Garante que o dia não estoure o mês atual (ex: dia 31 em fevereiro)
-        int maxDayOfMonth = now.getMonth().length(now.toLocalDate().isLeapYear());
-        if (day > maxDayOfMonth) day = maxDayOfMonth;
+    private void processMonthly(Transaction parent, LocalDateTime now) {
+        LocalDateTime startOfMonth = now.withDayOfMonth(1).with(LocalTime.MIN);
+        LocalDateTime endOfMonth = now.withDayOfMonth(now.getMonth().length(now.toLocalDate().isLeapYear())).with(LocalTime.MAX);
 
-        Transaction instance = Transaction.builder()
+        int repeatDay = parent.getRepeatDay() != null ? parent.getRepeatDay() : 1;
+        boolean isTimeToProcess = now.getDayOfMonth() >= repeatDay;
+
+        if (isTimeToProcess) {
+            boolean alreadyExists = checkTransactionInstancePort.existsInstanceInPeriod(parent.getId(), startOfMonth, endOfMonth);
+            if (!alreadyExists) {
+                int day = repeatDay;
+                int maxDay = now.getMonth().length(now.toLocalDate().isLeapYear());
+                if (day > maxDay) day = maxDay;
+                saveTransactionPort.save(buildInstance(parent, now.withDayOfMonth(day).with(LocalTime.NOON)));
+            }
+        }
+    }
+
+    private void processWeekly(Transaction parent, LocalDateTime now) {
+        // Check the current week window (Mon 00:00 to Sun 23:59)
+        LocalDateTime startOfWeek = now.with(DayOfWeek.MONDAY).with(LocalTime.MIN);
+        LocalDateTime endOfWeek = now.with(DayOfWeek.SUNDAY).with(LocalTime.MAX);
+
+        boolean alreadyExists = checkTransactionInstancePort.existsInstanceInPeriod(parent.getId(), startOfWeek, endOfWeek);
+        if (!alreadyExists) {
+            saveTransactionPort.save(buildInstance(parent, now.with(LocalTime.NOON)));
+        }
+    }
+
+    private Transaction buildInstance(Transaction parent, LocalDateTime date) {
+        return Transaction.builder()
                 .userId(parent.getUserId())
                 .amount(parent.getAmount())
                 .description(parent.getDescription())
                 .type(parent.getType())
                 .category(parent.getCategory())
-                .date(now.withDayOfMonth(day).with(LocalTime.NOON))
-                .isRecurring(false) // A instância em si não é recorrente, ela é o registro final
+                .date(date)
+                .isRecurring(false)
                 .iconKey(parent.getIconKey())
                 .parentTransactionId(parent.getId())
                 .build();
-
-        saveTransactionPort.save(instance);
     }
 }

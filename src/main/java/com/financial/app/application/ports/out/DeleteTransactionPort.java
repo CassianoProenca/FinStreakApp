@@ -4,4 +4,5 @@ import java.util.UUID;
 
 public interface DeleteTransactionPort {
     void deleteById(UUID id);
+    void deleteByParentId(UUID parentId);
 }

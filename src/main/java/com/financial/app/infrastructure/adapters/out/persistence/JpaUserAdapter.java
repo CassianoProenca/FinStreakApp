@@ -89,8 +89,6 @@ public class JpaUserAdapter implements LoadUserPort, SaveUserPort, LoadAllUsersP
 
     @Override
     public List<UUID> loadAllUserIds() {
-        return userJpaRepository.findAll().stream()
-                .map(UserEntity::getId)
-                .toList();
+        return userJpaRepository.findAllIds();
     }
 }

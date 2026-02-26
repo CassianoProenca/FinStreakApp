@@ -30,7 +30,7 @@ public class ForgotPasswordService implements ForgotPasswordUseCase {
             PasswordResetToken resetToken = PasswordResetToken.builder()
                     .userId(user.getId())
                     .token(token)
-                    .expiresAt(LocalDateTime.now().plusMinutes(15))
+                    .expiresAt(LocalDateTime.now().plusMinutes(60)) // 1 hour TTL (#21)
                     .used(false)
                     .build();
             savePasswordResetTokenPort.save(resetToken);

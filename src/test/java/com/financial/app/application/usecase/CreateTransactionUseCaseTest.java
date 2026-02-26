@@ -29,14 +29,10 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CreateTransactionUseCaseTest {
 
-    @Mock
-    private LoadUserPort loadUserPort;
-
-    @Mock
-    private SaveTransactionPort saveTransactionPort;
-
-    @Mock
-    private CheckStreakUseCase checkStreakUseCase;
+    @Mock private LoadUserPort loadUserPort;
+    @Mock private SaveTransactionPort saveTransactionPort;
+    @Mock private CheckStreakUseCase checkStreakUseCase;
+    @Mock private BudgetService budgetService;
 
     @InjectMocks
     private CreateTransactionService createTransactionService;
@@ -66,7 +62,8 @@ class CreateTransactionUseCaseTest {
                 false,
                 null,
                 null,
-                "food"
+                "food",
+                null
         );
 
         when(loadUserPort.loadById(userId)).thenReturn(Optional.of(user));
@@ -93,7 +90,8 @@ class CreateTransactionUseCaseTest {
                 false,
                 null,
                 null,
-                "other"
+                "other",
+                null
         );
 
         when(loadUserPort.loadById(userId)).thenReturn(Optional.empty());

@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -39,5 +40,26 @@ public class JpaNotificationAdapter implements SaveNotificationPort, LoadNotific
             entity.setRead(true);
             repository.save(entity);
         });
+    }
+
+    @Override
+    public void markAllAsRead(UUID userId) {
+        List<NotificationEntity> unread = repository.findByUserIdAndIsReadFalse(userId);
+        unread.forEach(e -> e.setRead(true));
+        repository.saveAll(unread);
+    }
+
+    @Override
+    public Optional<Notification> loadById(UUID notificationId) {
+        return repository.findById(notificationId).map(NotificationMapper::toDomain);
+    }
+
+    @Override
+    public void deleteById(UUID notificationId) {
+        repository.deleteById(notificationId);
+    }
+
+    public long countUnread(UUID userId) {
+        return repository.countByUserIdAndIsReadFalse(userId);
     }
 }

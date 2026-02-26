@@ -43,6 +43,11 @@ public record CreateTransactionRequest(
         Integer repeatDay,
 
         @Schema(description = "Chave do ícone visual para exibição no app", example = "hamburger")
-        String iconKey
+        String iconKey,
+
+        @Schema(description = "Número de parcelas. Se informado e > 1, cria transações filhas para os meses seguintes. Mutuamente exclusivo com isRecurring=true.", example = "12")
+        @Min(value = 1, message = "O número de parcelas deve ser pelo menos 1")
+        @Max(value = 360, message = "O número de parcelas não pode exceder 360")
+        Integer installments
 
 ) {}

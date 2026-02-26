@@ -91,7 +91,8 @@ class FullFlowIntegrationTest {
                 false,
                 null,
                 null,
-                "reward"
+                "reward",
+                null
         );
 
         mockMvc.perform(post("/api/transactions")

@@ -7,7 +7,6 @@ import com.financial.app.application.ports.out.SaveUserPort;
 import com.financial.app.domain.exception.ResourceNotFoundException;
 import com.financial.app.domain.model.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +17,6 @@ public class UpdateUserProfileService implements UpdateUserProfileUseCase {
 
     private final LoadUserPort loadUserPort;
     private final SaveUserPort saveUserPort;
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     public User execute(UpdateUserProfileCommand command) {
@@ -33,9 +31,8 @@ public class UpdateUserProfileService implements UpdateUserProfileUseCase {
             user.setAvatarUrl(command.avatarUrl());
         }
 
-        if (command.password() != null && !command.password().isBlank()) {
-            user.setPassword(passwordEncoder.encode(command.password()));
-        }
+        // Password changes are not allowed via this endpoint.
+        // Use POST /api/auth/change-password which requires the current password.
 
         return saveUserPort.save(user);
     }

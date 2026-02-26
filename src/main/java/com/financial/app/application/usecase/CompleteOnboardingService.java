@@ -48,26 +48,16 @@ public class CompleteOnboardingService implements CompleteOnboardingUseCase {
             throw new BusinessException("Onboarding já realizado");
         }
 
-        // 1. Set Monthly Income on User (Point 2)
+        // 1. Set Monthly Income on User
         if (command.monthlyIncome() != null) {
             user.setMonthlyIncome(command.monthlyIncome());
         }
 
-        // 2. Create Income Transaction (Salary) - Still useful to have a history record
-        if (command.monthlyIncome() != null && command.monthlyIncome().compareTo(BigDecimal.ZERO) > 0) {
-            Transaction income = Transaction.builder()
-                    .userId(user.getId())
-                    .amount(command.monthlyIncome())
-                    .description("Monthly Income (Initial)")
-                    .type(TransactionType.INCOME)
-                    .category(TransactionCategory.SALARY)
-                    .date(LocalDateTime.now())
-                    .iconKey("salary") // Default icon for salary
-                    .build();
-            saveTransactionPort.save(income);
-        }
+        // NOTE: We intentionally do NOT create an INCOME transaction here.
+        // The monthlyIncome field on the User entity is the source of truth.
+        // Creating a day-0 transaction would distort the historical balance. (#10)
 
-        // 3. Create Fixed Expenses (Point 3 - Recurrence)
+        // 2. Create Fixed Expenses (recurring)
         if (command.fixedExpenses() != null) {
             command.fixedExpenses().forEach(expense -> {
                 Transaction tx = Transaction.builder()

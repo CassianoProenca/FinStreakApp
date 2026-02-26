@@ -71,6 +71,7 @@ public class CheckStreakService implements CheckStreakUseCase {
     }
 
     private GamificationProfile createInitialProfile(UUID userId) {
+        // Build but do NOT save yet — it will be saved at the end of execute() so it gets a real ID (#19)
         return GamificationProfile.builder()
                 .userId(userId)
                 .currentStreak(0)
@@ -82,22 +83,28 @@ public class CheckStreakService implements CheckStreakUseCase {
     private void checkAndAwardAchievements(GamificationProfile profile) {
         UUID userId = profile.getUserId();
 
-        // Medalha: Primeiros Passos
+        // Medalha: Primeiros Passos (#17 — XP granted)
         if (!loadAchievementsPort.hasAchievement(userId, AchievementType.FIRST_STEPS)) {
             awardAchievement(userId, AchievementType.FIRST_STEPS, "Primeiros Passos", "Você registrou sua primeira atividade financeira!");
-            profile.addXp(200); // Bônus por medalha
+            profile.addXp(200);
         }
 
-        // Medalha: Streak de 7 dias
+        // Medalha: Streak de 7 dias (#17 — XP granted)
         if (profile.getCurrentStreak() >= 7 && !loadAchievementsPort.hasAchievement(userId, AchievementType.STREAK_7)) {
             awardAchievement(userId, AchievementType.STREAK_7, "Uma Semana de Foco", "7 dias seguidos de controle financeiro!");
             profile.addXp(500);
         }
 
-        // Medalha: Streak de 30 dias
+        // Medalha: Streak de 30 dias (#17 — XP granted)
         if (profile.getCurrentStreak() >= 30 && !loadAchievementsPort.hasAchievement(userId, AchievementType.STREAK_30)) {
             awardAchievement(userId, AchievementType.STREAK_30, "Mestre da Constância", "30 dias de ofensiva financeira!");
             profile.addXp(1500);
+        }
+
+        // Medalha: ELITE_SAVER — concedida ao atingir nível 10 (#18)
+        if (profile.getLevel() >= 10 && !loadAchievementsPort.hasAchievement(userId, AchievementType.ELITE_SAVER)) {
+            awardAchievement(userId, AchievementType.ELITE_SAVER, "Poupador de Elite", "Você atingiu o nível 10!");
+            profile.addXp(2000);
         }
     }
 

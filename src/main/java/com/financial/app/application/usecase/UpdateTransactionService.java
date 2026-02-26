@@ -30,7 +30,7 @@ public class UpdateTransactionService implements UpdateTransactionUseCase {
             throw new UnauthorizedAccessException("Você não tem permissão para alterar esta transação");
         }
 
-        // Update fields
+        // Update parent fields
         transaction.setAmount(command.amount());
         transaction.setDescription(command.description());
         transaction.setType(command.type());
@@ -41,6 +41,20 @@ public class UpdateTransactionService implements UpdateTransactionUseCase {
         transaction.setRepeatDay(command.repeatDay());
         transaction.setIconKey(command.iconKey());
 
-        return saveTransactionPort.save(transaction);
+        Transaction savedParent = saveTransactionPort.save(transaction);
+
+        // If this is a parent installment, propagate amount/description/type/category/iconKey to children
+        if (savedParent.getTotalInstallments() != null && savedParent.getTotalInstallments() > 1) {
+            loadTransactionPort.loadChildInstallments(transactionId).forEach(child -> {
+                child.setAmount(command.amount());
+                child.setDescription(command.description());
+                child.setType(command.type());
+                child.setCategory(command.category());
+                child.setIconKey(command.iconKey());
+                saveTransactionPort.save(child);
+            });
+        }
+
+        return savedParent;
     }
 }

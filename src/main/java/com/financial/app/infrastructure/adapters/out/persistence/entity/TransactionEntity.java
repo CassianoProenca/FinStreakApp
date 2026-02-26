@@ -57,4 +57,10 @@ public class TransactionEntity extends AbstractBaseEntity {
 
     @Column(name = "goal_id")
     private UUID goalId;
+
+    @Column(name = "total_installments")
+    private Integer totalInstallments;
+
+    @Column(name = "current_installment")
+    private Integer currentInstallment;
 }

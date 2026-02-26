@@ -1,17 +1,24 @@
 package com.financial.app.infrastructure.adapters.in.web;
 
 import com.financial.app.application.ports.in.DeleteTransactionUseCase;
+import com.financial.app.application.ports.in.GetMonthlyStatementUseCase;
+import com.financial.app.application.ports.in.GetUpcomingTransactionsUseCase;
 import com.financial.app.application.ports.in.UpdateTransactionUseCase;
 import com.financial.app.application.ports.in.ListTransactionsUseCase;
 import com.financial.app.application.ports.in.CreateTransactionUseCase;
 import com.financial.app.application.ports.in.TransactionQuery;
 import com.financial.app.application.ports.in.command.CreateTransactionCommand;
+import com.financial.app.application.ports.out.LoadTransactionPort;
+import com.financial.app.domain.exception.ResourceNotFoundException;
+import com.financial.app.domain.exception.UnauthorizedAccessException;
 import com.financial.app.domain.model.PagedResult;
 import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.TransactionCategory;
 import com.financial.app.domain.model.enums.TransactionType;
 import com.financial.app.infrastructure.adapters.in.web.dto.request.CreateTransactionRequest;
+import com.financial.app.infrastructure.adapters.in.web.dto.response.MonthlyStatementResponse;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.TransactionResponse;
+import com.financial.app.infrastructure.adapters.in.web.dto.response.UpcomingTransactionResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -41,6 +48,33 @@ public class TransactionController {
     private final ListTransactionsUseCase listTransactionsUseCase;
     private final UpdateTransactionUseCase updateTransactionUseCase;
     private final DeleteTransactionUseCase deleteTransactionUseCase;
+    private final GetMonthlyStatementUseCase getMonthlyStatementUseCase;
+    private final GetUpcomingTransactionsUseCase getUpcomingTransactionsUseCase;
+    private final LoadTransactionPort loadTransactionPort;
+
+    @Operation(
+            summary = "Buscar transação por ID",
+            description = "Retorna os detalhes de uma transação específica do usuário autenticado.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Transação retornada com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido"),
+                    @ApiResponse(responseCode = "403", description = "A transação não pertence ao usuário autenticado"),
+                    @ApiResponse(responseCode = "404", description = "Transação não encontrada")
+            }
+    )
+    @GetMapping("/{id}")
+    public ResponseEntity<TransactionResponse> getById(
+            @Parameter(description = "ID único da transação", required = true, example = "3fa85f64-5717-4562-b3fc-2c963f66afa6")
+            @PathVariable UUID id,
+            Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        Transaction transaction = loadTransactionPort.loadById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Transação não encontrada"));
+        if (!transaction.getUserId().equals(userId)) {
+            throw new UnauthorizedAccessException("Você não tem permissão para acessar esta transação");
+        }
+        return ResponseEntity.ok(toResponse(transaction));
+    }
 
     @Operation(
             summary = "Remover transação",
@@ -93,7 +127,8 @@ public class TransactionController {
                 request.isRecurring(),
                 request.frequency(),
                 request.repeatDay(),
-                request.iconKey()
+                request.iconKey(),
+                request.installments()
         );
 
         Transaction transaction = createTransactionUseCase.execute(command);
@@ -135,7 +170,8 @@ public class TransactionController {
                 request.isRecurring(),
                 request.frequency(),
                 request.repeatDay(),
-                request.iconKey()
+                request.iconKey(),
+                request.installments()
         );
 
         Transaction transaction = updateTransactionUseCase.execute(userId, id, command);
@@ -164,6 +200,9 @@ public class TransactionController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) TransactionCategory category,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false, defaultValue = "date") String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             Authentication authentication
@@ -171,7 +210,7 @@ public class TransactionController {
         UUID userId = UUID.fromString(authentication.getName());
 
         TransactionQuery query = new TransactionQuery(
-                userId, startDate, endDate, type, category, page, size
+                userId, startDate, endDate, type, category, description, sortBy, sortDir, page, size
         );
 
         PagedResult<Transaction> result = listTransactionsUseCase.execute(query);
@@ -192,6 +231,42 @@ public class TransactionController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(
+            summary = "Extrato mensal",
+            description = "Retorna o extrato financeiro de um mês específico, incluindo saldo inicial, totais por tipo e lista de transações.",
+            parameters = {
+                    @Parameter(name = "month", description = "Mês (1-12)", example = "2", required = true),
+                    @Parameter(name = "year", description = "Ano", example = "2026", required = true)
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Extrato mensal"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
+    @GetMapping("/statement")
+    public ResponseEntity<MonthlyStatementResponse> statement(
+            @RequestParam int month,
+            @RequestParam int year,
+            Authentication authentication
+    ) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(getMonthlyStatementUseCase.execute(userId, month, year));
+    }
+
+    @Operation(
+            summary = "Transações futuras",
+            description = "Retorna parcelas futuras já salvas no banco e projeções dos próximos 3 meses para transações recorrentes.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de transações futuras e projeções"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<UpcomingTransactionResponse>> upcoming(Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(getUpcomingTransactionsUseCase.execute(userId));
+    }
+
     private TransactionResponse toResponse(Transaction transaction) {
         return new TransactionResponse(
                 transaction.getId(),
@@ -205,7 +280,9 @@ public class TransactionController {
                 transaction.getFrequency(),
                 transaction.getRepeatDay(),
                 transaction.getIconKey(),
-                transaction.getGoalId()
+                transaction.getGoalId(),
+                transaction.getTotalInstallments(),
+                transaction.getCurrentInstallment()
         );
     }
 }
