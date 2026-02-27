@@ -10,6 +10,7 @@ import java.util.UUID;
 public record OnboardingCommand(
     UUID userId,
     BigDecimal monthlyIncome,
+    Integer monthlyIncomeDay,
     List<OnboardingExpenseItem> fixedExpenses,
     OnboardingGoalItem mainGoal
 ) {}

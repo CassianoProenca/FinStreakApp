@@ -51,27 +51,73 @@ public class CompleteOnboardingService implements CompleteOnboardingUseCase {
         // 1. Set Monthly Income on User
         if (command.monthlyIncome() != null) {
             user.setMonthlyIncome(command.monthlyIncome());
+
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime firstOfMonth = now.withDayOfMonth(1).withHour(9).withMinute(0);
+
+            // Create the Recurring Template
+            Transaction incomeTemplate = Transaction.builder()
+                    .userId(user.getId())
+                    .amount(command.monthlyIncome())
+                    .description("Renda Mensal (Recorrência)")
+                    .type(TransactionType.INCOME)
+                    .category(TransactionCategory.SALARY)
+                    .date(now)
+                    .isRecurring(true)
+                    .frequency("MONTHLY")
+                    .repeatDay(command.monthlyIncomeDay() != null ? command.monthlyIncomeDay() : 1)
+                    .endRecurrenceDate(now.plusMonths(12))
+                    .iconKey("banknote")
+                    .build();
+            saveTransactionPort.save(incomeTemplate);
+
+            // Create the first REAL transaction for this month
+            Transaction initialIncome = Transaction.builder()
+                    .userId(user.getId())
+                    .amount(command.monthlyIncome())
+                    .description("Renda Mensal")
+                    .type(TransactionType.INCOME)
+                    .category(TransactionCategory.SALARY)
+                    .date(firstOfMonth)
+                    .isRecurring(false)
+                    .iconKey("banknote")
+                    .build();
+            saveTransactionPort.save(initialIncome);
         }
 
-        // NOTE: We intentionally do NOT create an INCOME transaction here.
-        // The monthlyIncome field on the User entity is the source of truth.
-        // Creating a day-0 transaction would distort the historical balance. (#10)
-
-        // 2. Create Fixed Expenses (recurring)
+        // 2. Create Fixed Expenses
         if (command.fixedExpenses() != null) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime firstOfMonth = now.withDayOfMonth(1).withHour(10).withMinute(0);
+
             command.fixedExpenses().forEach(expense -> {
-                Transaction tx = Transaction.builder()
+                // Template
+                Transaction expenseTemplate = Transaction.builder()
+                        .userId(user.getId())
+                        .amount(expense.amount())
+                        .description(expense.name() + " (Recorrência)")
+                        .type(TransactionType.EXPENSE)
+                        .category(expense.category() != null ? TransactionCategory.valueOf(expense.category().toUpperCase()) : TransactionCategory.OTHER)
+                        .date(now)
+                        .isRecurring(true)
+                        .frequency("MONTHLY")
+                        .endRecurrenceDate(now.plusMonths(3))
+                        .iconKey(expense.iconKey())
+                        .build();
+                saveTransactionPort.save(expenseTemplate);
+
+                // Real transaction for current month
+                Transaction initialExpense = Transaction.builder()
                         .userId(user.getId())
                         .amount(expense.amount())
                         .description(expense.name())
                         .type(TransactionType.EXPENSE)
                         .category(expense.category() != null ? TransactionCategory.valueOf(expense.category().toUpperCase()) : TransactionCategory.OTHER)
-                        .date(LocalDateTime.now())
-                        .isRecurring(true)
-                        .frequency("MONTHLY")
+                        .date(firstOfMonth)
+                        .isRecurring(false)
                         .iconKey(expense.iconKey())
                         .build();
-                saveTransactionPort.save(tx);
+                saveTransactionPort.save(initialExpense);
             });
         }
 

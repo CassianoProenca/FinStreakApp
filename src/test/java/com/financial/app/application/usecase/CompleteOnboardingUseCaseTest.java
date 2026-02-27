@@ -63,6 +63,7 @@ class CompleteOnboardingUseCaseTest {
         command = new OnboardingCommand(
                 user.getId(),
                 new BigDecimal("5000"),
+                5, // income day
                 List.of(expense1, expense2, expense3),
                 goalItem
         );
@@ -75,8 +76,8 @@ class CompleteOnboardingUseCaseTest {
 
         completeOnboardingService.execute(command);
 
-        // No income transaction is created any more (#10) — only the 3 recurring expenses
-        verify(saveTransactionPort, times(3)).save(any(Transaction.class));
+        // Now 4 transactions: 1 Income (recurring) + 3 recurring expenses
+        verify(saveTransactionPort, times(4)).save(any(Transaction.class));
 
         // Verify Goal creation
         verify(saveGoalPort, times(1)).save(any(Goal.class));

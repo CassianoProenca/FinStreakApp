@@ -27,6 +27,7 @@ public class Transaction extends BaseDomainEntity {
     private boolean isRecurring = false;
     private String frequency; // e.g., MONTHLY, WEEKLY
     private Integer repeatDay;
+    private LocalDateTime endRecurrenceDate;
     private String iconKey;
     private UUID parentTransactionId;
     private UUID goalId;

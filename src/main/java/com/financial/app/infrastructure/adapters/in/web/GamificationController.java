@@ -1,11 +1,14 @@
 package com.financial.app.infrastructure.adapters.in.web;
 
+import com.financial.app.application.ports.in.GetDailyMissionsUseCase;
 import com.financial.app.application.ports.in.GetGamificationProfileUseCase;
+import com.financial.app.application.ports.in.GetUnlockedAvatarsUseCase;
 import com.financial.app.application.ports.out.LoadAchievementsPort;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.domain.model.GamificationProfile;
 import com.financial.app.domain.model.User;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.AchievementResponse;
+import com.financial.app.infrastructure.adapters.in.web.dto.response.DailyMissionResponse;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.GamificationResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,6 +36,8 @@ public class GamificationController {
     private final GetGamificationProfileUseCase getGamificationProfileUseCase;
     private final LoadUserPort loadUserPort;
     private final LoadAchievementsPort loadAchievementsPort;
+    private final GetDailyMissionsUseCase getDailyMissionsUseCase;
+    private final GetUnlockedAvatarsUseCase getUnlockedAvatarsUseCase;
 
     @Operation(
             summary = "Meu Perfil Gamificado",
@@ -82,5 +87,36 @@ public class GamificationController {
                 .map(a -> new AchievementResponse(a.getId(), a.getType(), a.getName(), a.getDescription(), a.getEarnedAt()))
                 .toList();
         return ResponseEntity.ok(achievements);
+    }
+
+    @Operation(
+            summary = "Missões Diárias",
+            description = "Retorna a lista de missões disponíveis para o usuário hoje e o status de conclusão.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Missões retornadas com sucesso"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
+    @GetMapping("/missions/daily")
+    public ResponseEntity<List<DailyMissionResponse>> getDailyMissions(Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        List<DailyMissionResponse> responses = getDailyMissionsUseCase.execute(userId).stream()
+                .map(r -> new DailyMissionResponse(r.id(), r.title(), r.description(), r.xpReward(), r.currentCount(), r.requiredCount(), r.completed()))
+                .toList();
+        return ResponseEntity.ok(responses);
+    }
+
+    @Operation(
+            summary = "Avatares Desbloqueados",
+            description = "Retorna a lista de chaves de avatares que o usuário já conquistou.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Lista de chaves de avatares"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
+    @GetMapping("/avatars/unlocked")
+    public ResponseEntity<List<String>> getUnlockedAvatars(Authentication authentication) {
+        UUID userId = UUID.fromString(authentication.getName());
+        return ResponseEntity.ok(getUnlockedAvatarsUseCase.execute(userId));
     }
 }

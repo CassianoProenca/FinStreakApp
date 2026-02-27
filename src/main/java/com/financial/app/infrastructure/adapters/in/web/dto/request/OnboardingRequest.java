@@ -17,6 +17,9 @@ public record OnboardingRequest(
         @Positive(message = "Monthly income must be positive")
         BigDecimal monthlyIncome,
 
+        @Schema(description = "Dia do mês em que a renda é recebida", example = "5")
+        Integer monthlyIncomeDay,
+
         @Schema(description = "Lista de despesas fixas mensais (ex: aluguel, internet, academia)")
         @Valid
         List<ExpenseRequest> fixedExpenses,

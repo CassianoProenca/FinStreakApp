@@ -149,6 +149,9 @@ public class JpaTransactionAdapter implements SaveTransactionPort, LoadTransacti
 
             predicates.add(criteriaBuilder.equal(root.get("userId"), query.userId()));
 
+            // Exclude recurring templates — only count real transactions in balance/statement
+            predicates.add(criteriaBuilder.equal(root.get("isRecurring"), false));
+
             if (query.startDate() != null) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("date"), query.startDate()));
             }

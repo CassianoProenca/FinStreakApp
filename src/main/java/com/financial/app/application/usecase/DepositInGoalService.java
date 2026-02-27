@@ -2,6 +2,7 @@ package com.financial.app.application.usecase;
 
 import com.financial.app.application.ports.in.CheckStreakUseCase;
 import com.financial.app.application.ports.in.DepositInGoalUseCase;
+import com.financial.app.application.ports.in.GetDailyMissionsUseCase;
 import com.financial.app.application.ports.out.GoalHistoryPort;
 import com.financial.app.application.ports.out.LoadAchievementsPort;
 import com.financial.app.application.ports.out.LoadGoalsPort;
@@ -20,6 +21,7 @@ import com.financial.app.domain.model.enums.NotificationType;
 import com.financial.app.domain.model.enums.TransactionCategory;
 import com.financial.app.domain.model.enums.TransactionType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -40,6 +43,7 @@ public class DepositInGoalService implements DepositInGoalUseCase {
     private final SaveAchievementPort saveAchievementPort;
     private final NotificationPort notificationPort;
     private final SaveTransactionPort saveTransactionPort;
+    private final GetDailyMissionsUseCase getDailyMissionsUseCase;
 
     @Override
     public GoalDeposit execute(UUID userId, UUID goalId, BigDecimal amount, String description) {
@@ -101,6 +105,13 @@ public class DepositInGoalService implements DepositInGoalUseCase {
                     "🎯 Parabéns! Você concluiu a meta \"" + goal.getTitle() + "\"!",
                     NotificationType.GOAL_COMPLETED);
             checkAndAwardGoalAchievements(userId, goal.getTargetAmount());
+        }
+
+        // Check daily missions after goal deposit
+        try {
+            getDailyMissionsUseCase.execute(userId);
+        } catch (Exception e) {
+            log.warn("Daily mission check failed for user {}: {}", userId, e.getMessage());
         }
 
         return savedDeposit;

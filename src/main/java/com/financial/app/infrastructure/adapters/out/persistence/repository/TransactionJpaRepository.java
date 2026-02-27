@@ -1,5 +1,6 @@
 package com.financial.app.infrastructure.adapters.out.persistence.repository;
 
+import com.financial.app.domain.model.enums.TransactionType;
 import com.financial.app.infrastructure.adapters.out.persistence.entity.TransactionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -24,4 +25,8 @@ public interface TransactionJpaRepository extends JpaRepository<TransactionEntit
     void deleteByParentTransactionId(UUID parentTransactionId);
 
     List<TransactionEntity> findByParentTransactionId(UUID parentTransactionId);
+
+    int countByUserIdAndDateBetween(UUID userId, LocalDateTime start, LocalDateTime end);
+
+    int countByUserIdAndTypeAndDateBetween(UUID userId, TransactionType type, LocalDateTime start, LocalDateTime end);
 }

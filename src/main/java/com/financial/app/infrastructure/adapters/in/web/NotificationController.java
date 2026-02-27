@@ -36,9 +36,20 @@ public class NotificationController {
     public ResponseEntity<List<NotificationResponse>> getNotifications(Authentication authentication) {
         UUID userId = UUID.fromString(authentication.getName());
         List<NotificationResponse> responses = getNotificationsUseCase.execute(userId).stream()
-                .map(n -> new NotificationResponse(n.getId(), n.getMessage(), n.getType(), n.isRead(), n.getCreatedAt()))
+                .map(n -> new NotificationResponse(n.getId(), titleForType(n.getType()), n.getMessage(), n.getType(), n.isRead(), n.getCreatedAt()))
                 .toList();
         return ResponseEntity.ok(responses);
+    }
+
+    private String titleForType(com.financial.app.domain.model.enums.NotificationType type) {
+        return switch (type) {
+            case STREAK -> "Sequência Aumentada! 🔥";
+            case LEVEL_UP -> "Subiu de Nível! 🆙";
+            case ACHIEVEMENT -> "Nova Medalha! 🏆";
+            case GOAL_COMPLETED -> "Meta Concluída! 🎯";
+            case BUDGET_ALERT -> "Alerta de Orçamento! ⚠️";
+            case SYSTEM -> "Notificação do Sistema";
+        };
     }
 
     @Operation(summary = "Contagem de não lidas", description = "Retorna a quantidade de notificações não lidas.",

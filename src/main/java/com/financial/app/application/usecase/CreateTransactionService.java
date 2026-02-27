@@ -2,11 +2,13 @@ package com.financial.app.application.usecase;
 
 import com.financial.app.application.ports.in.CheckStreakUseCase;
 import com.financial.app.application.ports.in.CreateTransactionUseCase;
+import com.financial.app.application.ports.in.GetDailyMissionsUseCase;
 import com.financial.app.application.ports.in.command.CreateTransactionCommand;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.TransactionType;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @Transactional
 public class CreateTransactionService implements CreateTransactionUseCase {
@@ -22,15 +25,18 @@ public class CreateTransactionService implements CreateTransactionUseCase {
     private final SaveTransactionPort saveTransactionPort;
     private final CheckStreakUseCase checkStreakUseCase;
     private final BudgetService budgetService;
+    private final GetDailyMissionsUseCase getDailyMissionsUseCase;
 
     public CreateTransactionService(LoadUserPort loadUserPort,
                                     SaveTransactionPort saveTransactionPort,
                                     CheckStreakUseCase checkStreakUseCase,
-                                    BudgetService budgetService) {
+                                    BudgetService budgetService,
+                                    GetDailyMissionsUseCase getDailyMissionsUseCase) {
         this.loadUserPort = loadUserPort;
         this.saveTransactionPort = saveTransactionPort;
         this.checkStreakUseCase = checkStreakUseCase;
         this.budgetService = budgetService;
+        this.getDailyMissionsUseCase = getDailyMissionsUseCase;
     }
 
     @Override
@@ -86,6 +92,13 @@ public class CreateTransactionService implements CreateTransactionUseCase {
         if (command.type() == TransactionType.EXPENSE && command.category() != null && command.date() != null) {
             budgetService.checkAndAlertBudget(command.userId(),
                     command.date().getMonthValue(), command.date().getYear(), command.category());
+        }
+
+        // Check daily missions after transaction
+        try {
+            getDailyMissionsUseCase.execute(command.userId());
+        } catch (Exception e) {
+            log.warn("Daily mission check failed for user {}: {}", command.userId(), e.getMessage());
         }
 
         return savedParent;

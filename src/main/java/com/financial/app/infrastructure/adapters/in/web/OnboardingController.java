@@ -65,7 +65,7 @@ public class OnboardingController {
                         request.mainGoal().iconKey()
                 );
 
-        OnboardingCommand command = new OnboardingCommand(userId, request.monthlyIncome(), expenses, goal);
+        OnboardingCommand command = new OnboardingCommand(userId, request.monthlyIncome(), request.monthlyIncomeDay(), expenses, goal);
         completeOnboardingUseCase.execute(command);
         return ResponseEntity.noContent().build();
     }
