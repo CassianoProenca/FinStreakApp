@@ -39,7 +39,7 @@ class RecurrenceServiceTest {
                 .amount(new java.math.BigDecimal("1500"))
                 .description("Rent")
                 .isRecurring(true)
-                .repeatDay(10)
+                .repeatDay(1) // day 1 is always <= any day of month, making isTimeToProcess always true
                 .build();
     }
 

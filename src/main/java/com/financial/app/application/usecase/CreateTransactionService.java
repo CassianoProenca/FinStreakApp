@@ -6,6 +6,7 @@ import com.financial.app.application.ports.in.command.CreateTransactionCommand;
 import com.financial.app.application.ports.out.LoadUserPort;
 import com.financial.app.application.ports.out.SaveTransactionPort;
 import com.financial.app.domain.model.Transaction;
+import com.financial.app.domain.model.enums.TransactionType;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +19,16 @@ public class CreateTransactionService implements CreateTransactionUseCase {
     private final LoadUserPort loadUserPort;
     private final SaveTransactionPort saveTransactionPort;
     private final CheckStreakUseCase checkStreakUseCase;
+    private final BudgetService budgetService;
 
     public CreateTransactionService(LoadUserPort loadUserPort,
                                     SaveTransactionPort saveTransactionPort,
-                                    CheckStreakUseCase checkStreakUseCase) {
+                                    CheckStreakUseCase checkStreakUseCase,
+                                    BudgetService budgetService) {
         this.loadUserPort = loadUserPort;
         this.saveTransactionPort = saveTransactionPort;
         this.checkStreakUseCase = checkStreakUseCase;
+        this.budgetService = budgetService;
     }
 
     @Override
@@ -49,6 +53,12 @@ public class CreateTransactionService implements CreateTransactionUseCase {
         Transaction savedTransaction = saveTransactionPort.save(transaction);
 
         checkStreakUseCase.execute(command.userId());
+
+        if (TransactionType.EXPENSE.equals(savedTransaction.getType())) {
+            int month = savedTransaction.getDate().getMonthValue();
+            int year = savedTransaction.getDate().getYear();
+            budgetService.checkAndAlertBudget(command.userId(), savedTransaction.getCategory(), month, year);
+        }
 
         return savedTransaction;
     }

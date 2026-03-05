@@ -96,10 +96,12 @@ class CheckStreakServiceTest {
         service.execute(userId);
 
         ArgumentCaptor<GamificationProfile> captor = ArgumentCaptor.forClass(GamificationProfile.class);
-        verify(saveProfilePort).save(captor.capture());
+        // createInitialProfile() saves once (ID generation), then execute() saves again → 2 total
+        verify(saveProfilePort, times(2)).save(captor.capture());
+        GamificationProfile finalProfile = captor.getAllValues().get(1);
         // 50 (daily) + 200 (FIRST_STEPS bonus)
-        assertEquals(250L, captor.getValue().getTotalXp());
-        assertEquals(1, captor.getValue().getCurrentStreak());
+        assertEquals(250L, finalProfile.getTotalXp());
+        assertEquals(1, finalProfile.getCurrentStreak());
     }
 
     @Test

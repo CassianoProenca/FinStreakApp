@@ -40,4 +40,13 @@ public class JpaNotificationAdapter implements SaveNotificationPort, LoadNotific
             repository.save(entity);
         });
     }
+
+    @Override
+    public boolean existsByIdAndUserId(UUID notificationId, UUID userId) {
+        return repository.existsByIdAndUserId(notificationId, userId);
+    }
+
+    public long countUnread(UUID userId) {
+        return repository.countByUserIdAndIsReadFalse(userId);
+    }
 }

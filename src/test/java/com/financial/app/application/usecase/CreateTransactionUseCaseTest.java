@@ -38,6 +38,9 @@ class CreateTransactionUseCaseTest {
     @Mock
     private CheckStreakUseCase checkStreakUseCase;
 
+    @Mock
+    private BudgetService budgetService;
+
     @InjectMocks
     private CreateTransactionService createTransactionService;
 

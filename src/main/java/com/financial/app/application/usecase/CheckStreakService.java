@@ -71,12 +71,14 @@ public class CheckStreakService implements CheckStreakUseCase {
     }
 
     private GamificationProfile createInitialProfile(UUID userId) {
-        return GamificationProfile.builder()
+        // Salva imediatamente para garantir que o perfil tenha ID gerado antes de checkAndAwardAchievements
+        GamificationProfile profile = GamificationProfile.builder()
                 .userId(userId)
                 .currentStreak(0)
                 .maxStreak(0)
                 .totalXp(0L)
                 .build();
+        return saveProfilePort.save(profile);
     }
 
     private void checkAndAwardAchievements(GamificationProfile profile) {
@@ -85,7 +87,7 @@ public class CheckStreakService implements CheckStreakUseCase {
         // Medalha: Primeiros Passos
         if (!loadAchievementsPort.hasAchievement(userId, AchievementType.FIRST_STEPS)) {
             awardAchievement(userId, AchievementType.FIRST_STEPS, "Primeiros Passos", "Você registrou sua primeira atividade financeira!");
-            profile.addXp(200); // Bônus por medalha
+            profile.addXp(200);
         }
 
         // Medalha: Streak de 7 dias
@@ -98,6 +100,12 @@ public class CheckStreakService implements CheckStreakUseCase {
         if (profile.getCurrentStreak() >= 30 && !loadAchievementsPort.hasAchievement(userId, AchievementType.STREAK_30)) {
             awardAchievement(userId, AchievementType.STREAK_30, "Mestre da Constância", "30 dias de ofensiva financeira!");
             profile.addXp(1500);
+        }
+
+        // Medalha: Elite Saver — nível 10
+        if (profile.getLevel() >= 10 && !loadAchievementsPort.hasAchievement(userId, AchievementType.ELITE_SAVER)) {
+            awardAchievement(userId, AchievementType.ELITE_SAVER, "Poupador de Elite", "Você atingiu o nível 10!");
+            profile.addXp(2000);
         }
     }
 

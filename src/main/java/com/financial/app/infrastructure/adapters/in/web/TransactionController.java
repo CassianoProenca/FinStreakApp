@@ -4,6 +4,7 @@ import com.financial.app.application.ports.in.DeleteTransactionUseCase;
 import com.financial.app.application.ports.in.UpdateTransactionUseCase;
 import com.financial.app.application.ports.in.ListTransactionsUseCase;
 import com.financial.app.application.ports.in.CreateTransactionUseCase;
+import com.financial.app.application.ports.in.GetMonthlyStatementUseCase;
 import com.financial.app.application.ports.in.TransactionQuery;
 import com.financial.app.application.ports.in.command.CreateTransactionCommand;
 import com.financial.app.domain.model.PagedResult;
@@ -11,6 +12,7 @@ import com.financial.app.domain.model.Transaction;
 import com.financial.app.domain.model.enums.TransactionCategory;
 import com.financial.app.domain.model.enums.TransactionType;
 import com.financial.app.infrastructure.adapters.in.web.dto.request.CreateTransactionRequest;
+import com.financial.app.infrastructure.adapters.in.web.dto.response.MonthlyStatementResponse;
 import com.financial.app.infrastructure.adapters.in.web.dto.response.TransactionResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +29,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,6 +44,7 @@ public class TransactionController {
     private final ListTransactionsUseCase listTransactionsUseCase;
     private final UpdateTransactionUseCase updateTransactionUseCase;
     private final DeleteTransactionUseCase deleteTransactionUseCase;
+    private final GetMonthlyStatementUseCase getMonthlyStatementUseCase;
 
     @Operation(
             summary = "Remover transação",
@@ -189,6 +193,46 @@ public class TransactionController {
                 result.isLast()
         );
 
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Extrato mensal",
+            description = "Retorna o extrato mensal completo com saldo de abertura, totais por tipo e transações do mês. " +
+                    "Permite consultar no máximo 3 meses anteriores ao mês atual. Não é permitido consultar meses futuros.",
+            parameters = {
+                    @Parameter(name = "month", description = "Mês (1-12)", required = true, example = "3"),
+                    @Parameter(name = "year", description = "Ano (ex: 2026)", required = true, example = "2026")
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Extrato gerado com sucesso"),
+                    @ApiResponse(responseCode = "400", description = "Mês/ano inválido, futuro ou fora do intervalo permitido"),
+                    @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
+            }
+    )
+    @GetMapping("/statement")
+    public ResponseEntity<MonthlyStatementResponse> getStatement(
+            @RequestParam int month,
+            @RequestParam int year,
+            Authentication authentication
+    ) {
+        if (month < 1 || month > 12) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        YearMonth requested = YearMonth.of(year, month);
+        YearMonth current = YearMonth.now();
+
+        if (requested.isAfter(current)) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (requested.isBefore(current.minusMonths(3))) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        UUID userId = UUID.fromString(authentication.getName());
+        MonthlyStatementResponse response = getMonthlyStatementUseCase.execute(userId, month, year);
         return ResponseEntity.ok(response);
     }
 
