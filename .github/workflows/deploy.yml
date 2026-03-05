@@ -3,6 +3,7 @@ name: Deploy FinStreak API
 on:
   push:
     branches: [ "master" ]
+  workflow_dispatch:
 
 env:
   # Nome da imagem (minúsculo obrigatório)
