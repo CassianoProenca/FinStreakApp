@@ -3,6 +3,7 @@ name: Deploy FinStreak API
 on:
   push:
     branches: [ "master" ]
+  workflow_dispatch:
 
 env:
   # Nome da imagem (minúsculo obrigatório)
@@ -32,7 +33,7 @@ jobs:
           cache: 'maven'
 
       - name: Build com Maven (Gera o .jar)
-        run: mvn clean package -DskipTests
+        run: ./mvnw clean package -DskipTests
 
       - name: Login no GitHub Container Registry
         uses: docker/login-action@v3
