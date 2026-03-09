@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface UserUnlockedAvatarJpaRepository extends JpaRepository<UserUnlockedAvatarEntity, UUID> {
     List<UserUnlockedAvatarEntity> findByUserId(UUID userId);
+
+    boolean existsByUserIdAndAvatarKey(UUID userId, String avatarKey);
 }
