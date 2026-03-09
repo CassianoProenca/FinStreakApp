@@ -1,7 +1,8 @@
 package com.financial.app.infrastructure.adapters.out.email;
 
 import com.financial.app.application.ports.out.EmailPort;
-import com.resend.*;
+import com.resend.Resend;
+import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
 import lombok.extern.slf4j.Slf4j;
