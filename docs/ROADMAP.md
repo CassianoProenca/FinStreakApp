@@ -11,6 +11,7 @@ O FinStreak é focado em transformar a gestão financeira em um hábito gratific
 - **Recorrência:** Processamento automático de lançamentos mensais/semanais.
 - **Metas (Goals):** Criação de objetivos de economia com barra de progresso.
 - **Orçamentos (Budgets):** Limites mensais por categoria com alertas de estouro.
+- **Extrato Mensal:** Endpoint `GET /api/transactions/statement` com saldo de abertura, totais por tipo, gastos por categoria e lista de transações do mês.
 
 ### 2. Gamificação
 - **Streaks (Ofensivas):** Contador de dias seguidos de atividade.
@@ -38,7 +39,6 @@ O FinStreak é focado em transformar a gestão financeira em um hábito gratific
 
 ### Alta Prioridade
 - [ ] **Categorias Dinâmicas:** API para gerenciar nomes, cores e ícones de categorias.
-- [ ] **Extrato Mensal Inteligente:** Endpoint otimizado para visualização no App.
 - [ ] **Parcelamentos:** Projeção de compras parceladas (ex: 12x) no saldo futuro.
 
 ### Médio Prazo
