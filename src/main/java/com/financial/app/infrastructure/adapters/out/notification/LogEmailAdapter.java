@@ -4,7 +4,7 @@ import com.financial.app.application.ports.out.EmailPort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-@Component
+// @Component
 @Slf4j
 public class LogEmailAdapter implements EmailPort {
 
