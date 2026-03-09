@@ -73,8 +73,21 @@ public class GamificationController {
     }
 
     @Operation(
-            summary = "Minhas Medalhas",
-            description = "Retorna todas as conquistas desbloqueadas pelo usuário. Tipos: FIRST_STEPS, STREAK_7, STREAK_30, ELITE_SAVER.",
+            summary = "Minhas Medalhas (Achievements)",
+            description = """
+                Retorna todas as medalhas desbloqueadas pelo usuário.
+                **IMPORTANTE (Frontend):** O backend detecta e salva as medalhas automaticamente com base em ações do usuário. NÃO é necessário enviar POST para desbloquear.
+                
+                **Gatilhos de Desbloqueio (Business Logic):**
+                - **FIRST_STEPS**: Desbloqueia na 1ª transação (despesa/receita) cadastrada.
+                - **GOAL_SETTER**: Desbloqueia ao criar a 1ª meta de economia.
+                - **STREAK_7**: Desbloqueia ao atingir sequência de 7 dias de atividade.
+                - **STREAK_30**: Desbloqueia ao atingir sequência de 30 dias de atividade.
+                - **BUDGET_MASTER**: Desbloqueia mensalmente se nenhum orçamento for estourado.
+                - **ELITE_SAVER**: Desbloqueia quando o usuário atinge o Nível 10 de XP.
+                
+                **Sugestão de UX:** Monitore o endpoint de Notificações para exibir alertas de novas medalhas em tempo real.
+                """,
             responses = {
                     @ApiResponse(responseCode = "200", description = "Lista de conquistas retornada com sucesso"),
                     @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
@@ -90,8 +103,17 @@ public class GamificationController {
     }
 
     @Operation(
-            summary = "Missões Diárias",
-            description = "Retorna as missões disponíveis para hoje e o progresso atual do usuário. Missões completadas geram XP automaticamente.",
+            summary = "Missões Diárias (Daily Missions)",
+            description = """
+                Retorna as missões para hoje e o progresso do usuário.
+                **IMPORTANTE (Frontend):** O progresso das missões é contabilizado automaticamente pelo backend.
+                
+                **Como funciona a contagem:**
+                - **Lançamento do Dia (TRANSACTION_COUNT):** Backend incrementa ao receber `POST /api/transactions`.
+                - **Meta do Bem (GOAL_DEPOSIT):** Backend incrementa ao receber `POST /api/goals/{id}/deposit`.
+                
+                Ao atingir o `requiredCount`, o backend marca a missão como completada, concede o XP e gera uma notificação.
+                """,
             responses = {
                     @ApiResponse(responseCode = "200", description = "Missões retornadas com sucesso"),
                     @ApiResponse(responseCode = "401", description = "Token JWT ausente ou inválido")
